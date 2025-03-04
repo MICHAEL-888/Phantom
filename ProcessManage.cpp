@@ -1,13 +1,16 @@
-#include "ProcessManage.h"
+ï»¿#include "ProcessManage.h"
 #include <Windows.h>
 #include <iostream>
 #include <winternl.h>
+#include <ntddk.h>
 
-// [ZwQuerySystemInformation ×ÔWindows 8Æğ²»ÔÙ¿ÉÓÃ¡£ Çë¸ÄÓÃ±¾Ö÷ÌâÖĞÁĞ³öµÄ±¸ÓÃº¯Êı¡£]
-// ±ØĞë¶¯Ì¬µ÷ÓÃ£¬Ê×ÏÈÉùÃ÷º¯ÊıÖ¸Õë
+// [ZwQuerySystemInformation è‡ªWindows 8èµ·ä¸å†å¯ç”¨ã€‚ è¯·æ”¹ç”¨æœ¬ä¸»é¢˜ä¸­åˆ—å‡ºçš„å¤‡ç”¨å‡½æ•°ã€‚]
+// å¿…é¡»åŠ¨æ€è°ƒç”¨ï¼Œé¦–å…ˆå£°æ˜å‡½æ•°æŒ‡é’ˆ
 typedef NTSTATUS(WINAPI* hZwQuerySystemInformation)(
-	SYSTEM_INFORMATION_CLASS SystemInformationClass, PVOID SystemInformation,
-	ULONG SystemInformationLength, PULONG ReturnLength);
+	SYSTEM_INFORMATION_CLASS SystemInformationClass, 
+	PVOID SystemInformation,
+	ULONG SystemInformationLength, 
+	PULONG ReturnLength);
 
 //NTSTATUS WINAPI ZwQuerySystemInformation(
 //	_In_      SYSTEM_INFORMATION_CLASS SystemInformationClass,
@@ -42,19 +45,43 @@ typedef NTSTATUS(WINAPI* hZwQuerySystemInformation)(
 //	LARGE_INTEGER Reserved7[6];
 //} SYSTEM_PROCESS_INFORMATION, * PSYSTEM_PROCESS_INFORMATION;
 
-ProcessManage::ProcessManage() {}
+//å¦‚æœä½¿ç”¨ ZwQueryInformationProcessï¼Œè¯·é€šè¿‡ è¿è¡Œæ—¶åŠ¨æ€é“¾æ¥è®¿é—®å‡½æ•°ã€‚ 
+//è¿™æ ·ï¼Œä»£ç å°±æœ‰æœºä¼šåœ¨æ“ä½œç³»ç»Ÿä¸­æ›´æ”¹æˆ–åˆ é™¤å‡½æ•°æ—¶æ­£å¸¸å“åº”ã€‚ ä½†æ˜¯ï¼Œç­¾åæ›´æ”¹å¯èƒ½æ— æ³•æ£€æµ‹åˆ°ã€‚
+//æ­¤å‡½æ•°æ²¡æœ‰å…³è”çš„å¯¼å…¥åº“ã€‚ å¿…é¡»ä½¿ç”¨ LoadLibrary å’Œ GetProcAddress å‡½æ•°åŠ¨æ€é“¾æ¥åˆ° Ntdll.dllã€‚
+
+typedef NTSTATUS(WINAPI* hZwQueryInformationProcess)(
+	HANDLE ProcessHandle,
+	PROCESSINFOCLASS ProcessInformationClass,
+	PVOID ProcessInformation,
+	ULONG ProcessInformationLength,
+	PULONG ReturnLength
+	);
+
+
+//NTSTATUS WINAPI ZwQueryInformationProcess(
+//	_In_Â Â Â Â Â Â HANDLE Â Â Â Â Â Â Â Â Â Â ProcessHandle,
+//	_In_Â Â Â Â Â Â PROCESSINFOCLASS ProcessInformationClass,
+//	_Out_Â Â Â Â Â PVOID Â Â Â Â Â Â Â Â Â Â Â ProcessInformation,
+//	_In_Â Â Â Â Â Â ULONG Â Â Â Â Â Â Â Â Â Â Â ProcessInformationLength,
+//	_Out_opt_Â PULONG Â Â Â Â Â Â Â Â Â Â ReturnLength
+//);
+
+ProcessManage::ProcessManage() {
+	InitProcessList();
+	InitProcessPath();
+}
 
 ProcessManage::~ProcessManage() {}
 
 void ProcessManage::InitProcessList() {
-	// »ñÈ¡ ntdll.dll Ä£¿é¾ä±ú
+	// è·å– ntdll.dll æ¨¡å—å¥æŸ„
 	HMODULE hNtDll = GetModuleHandleW(L"ntdll.dll");
 	if (!hNtDll) {
 		std::cerr << "Failed to get ntdll.dll handle" << std::endl;
 		return;
 	}
 
-	// »ñÈ¡ ZwQuerySystemInformation º¯ÊıµØÖ·
+	// è·å– ZwQuerySystemInformation å‡½æ•°åœ°å€
 	hZwQuerySystemInformation ZwQuerySystemInformation =
 		(hZwQuerySystemInformation)GetProcAddress(hNtDll,
 			"ZwQuerySystemInformation");
@@ -63,14 +90,14 @@ void ProcessManage::InitProcessList() {
 		return;
 	}
 
-	// Ö¸Ïòº¯ÊıĞ´ÈëËùÇëÇóĞÅÏ¢µÄÊµ¼Ê´óĞ¡µÄÎ»ÖÃµÄ¿ÉÑ¡Ö¸Õë¡£ Èç¹û¸Ã´óĞ¡Ğ¡ÓÚ»òµÈÓÚ SystemInformationLength ²ÎÊı£¬
-	// ¸Ãº¯Êı»á½«ĞÅÏ¢¸´ÖÆµ½ SystemInformation »º³åÇøÖĞ;·ñÔò£¬Ëü½«·µ»Ø NTSTATUS ´íÎó´úÂë£¬²¢ÔÚ ReturnLength ÖĞ
-	// ·µ»Ø½ÓÊÕÇëÇóµÄĞÅÏ¢ËùĞèµÄ»º³åÇø´óĞ¡¡£
+	// æŒ‡å‘å‡½æ•°å†™å…¥æ‰€è¯·æ±‚ä¿¡æ¯çš„å®é™…å¤§å°çš„ä½ç½®çš„å¯é€‰æŒ‡é’ˆã€‚ å¦‚æœè¯¥å¤§å°å°äºæˆ–ç­‰äº SystemInformationLength å‚æ•°ï¼Œ
+	// è¯¥å‡½æ•°ä¼šå°†ä¿¡æ¯å¤åˆ¶åˆ° SystemInformation ç¼“å†²åŒºä¸­;å¦åˆ™ï¼Œå®ƒå°†è¿”å› NTSTATUS é”™è¯¯ä»£ç ï¼Œå¹¶åœ¨ ReturnLength ä¸­
+	// è¿”å›æ¥æ”¶è¯·æ±‚çš„ä¿¡æ¯æ‰€éœ€çš„ç¼“å†²åŒºå¤§å°ã€‚
 
 	ULONG m_BufferSize = 0;
 	PVOID m_Buffer = nullptr;
 
-	// ´«Èë¿ÕÖ¸Õë»ñÈ¡»º³åÇø´óĞ¡
+	// ä¼ å…¥ç©ºæŒ‡é’ˆè·å–ç¼“å†²åŒºå¤§å°
 	NTSTATUS status = ZwQuerySystemInformation(SystemProcessInformation, nullptr,
 		0, &m_BufferSize);
 
@@ -79,14 +106,14 @@ void ProcessManage::InitProcessList() {
 		return;
 	}
 
-	// ·ÖÅäÄÚ´æ
+	// åˆ†é…å†…å­˜
 	m_Buffer = malloc(m_BufferSize);
 	if (!m_Buffer) {
 		std::cerr << "Failed to allocate memory" << std::endl;
 		return;
 	}
 
-	// »ñÈ¡½ø³ÌĞÅÏ¢
+	// è·å–è¿›ç¨‹ä¿¡æ¯
 	status = ZwQuerySystemInformation(SystemProcessInformation, m_Buffer,
 		m_BufferSize, nullptr);
 
@@ -101,15 +128,18 @@ void ProcessManage::InitProcessList() {
 		(PSYSTEM_PROCESS_INFORMATION)m_Buffer;
 
 
-	// ±éÀú½ø³ÌĞÅÏ¢
+	// éå†è¿›ç¨‹ä¿¡æ¯
+
 	while (true) {
+		processList.emplace_back();
+		ProcessList& newProcess = processList.back();
 		if (processInfo->ImageName.Buffer) {
-			processList.pid = HandleToULong(processInfo->UniqueProcessId);
-			processList.processName = processInfo->ImageName.Buffer;
+			newProcess.pid = HandleToULong(processInfo->UniqueProcessId);
+			newProcess.processName = processInfo->ImageName.Buffer;
 		}
 		else {
-			processList.pid = HandleToULong(processInfo->UniqueProcessId);
-			processList.processName = L"ÏµÍ³¿ÕÏĞ½ø³Ì";
+			newProcess.pid = HandleToULong(processInfo->UniqueProcessId);
+			newProcess.processName = L"ç³»ç»Ÿç©ºé—²è¿›ç¨‹";
 		}
 
 		if (processInfo->NextEntryOffset == 0) {
@@ -125,4 +155,51 @@ void ProcessManage::InitProcessList() {
 		m_Buffer = nullptr;
 	}
 
+}
+
+void ProcessManage::InitProcessPath() {
+	// è·å– ntdll.dll æ¨¡å—å¥æŸ„
+	HMODULE hNtDll = GetModuleHandleW(L"ntdll.dll");
+	if (!hNtDll) {
+		std::cerr << "Failed to get ntdll.dll handle" << std::endl;
+		return;
+	}
+
+	// è·å–ZwQueryInformationProcesså‡½æ•°åœ°å€
+	hZwQueryInformationProcess ZwQueryInformationProcess =
+		(hZwQueryInformationProcess)GetProcAddress(hNtDll, "ZwQueryInformationProcess");
+	if (!ZwQueryInformationProcess) {
+		std::cerr << "Failed to get ZwQuerySystemInformation address" << std::endl;
+		return;
+	}
+
+	ULONG m_BufferSize = 0;
+	PVOID m_Buffer = nullptr;
+	NTSTATUS status = ZwQueryInformationProcess(ULongToHandle(processList[8].pid), ProcessImageFileName, nullptr, 0, &m_BufferSize);
+
+	if (m_BufferSize == 0) {
+		std::cerr << "Failed to get buffer size" << std::endl;
+		return;
+	}
+
+	m_Buffer = malloc(m_BufferSize);
+	if (!m_Buffer) {
+		std::cerr << "Failed to allocate memory" << std::endl;
+		return;
+	}
+
+	status = ZwQueryInformationProcess(ULongToHandle(processList[8].pid), ProcessImageFileName, m_Buffer, m_BufferSize, nullptr);
+
+	if (!NT_SUCCESS(status)) {
+		std::cerr << "Failed to query process information" << std::endl;
+		free(m_Buffer);
+		m_Buffer = nullptr;
+		return;
+	}
+
+	UNICODE_STRING newProcessInfo = *(PUNICODE_STRING)m_Buffer;
+	processList[8].processPath = newProcessInfo.Buffer;
+	std::wcout << processList[8].processPath << std::endl;
+
+	return;
 }
