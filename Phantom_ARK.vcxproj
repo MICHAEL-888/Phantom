@@ -225,6 +225,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="API.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ProcessManage.cpp" />
   </ItemGroup>
@@ -232,6 +233,7 @@
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="API.h" />
     <ClInclude Include="ProcessManage.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,8 +1,9 @@
+#pragma once
 #include <Windows.h>
 #include <iostream>
 #include <winternl.h>
 #include <vector>
-#pragma once
+
 class ProcessManage {
 public:
   ProcessManage();
