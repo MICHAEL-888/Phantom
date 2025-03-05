@@ -63,6 +63,15 @@ typedef NTSTATUS(WINAPI* hZwQueryInformationProcess)(
 //	_Out_opt_ PULONG           ReturnLength
 //);
 
+
+// msdn文档中第四个参数为PCLIENT_ID ClientId，此处手动调整一下。
+
+typedef NTSTATUS(WINAPI* hZwOpenProcess)(
+	PHANDLE ProcessHandle,
+	ACCESS_MASK DesiredAccess,
+	POBJECT_ATTRIBUTES ObjectAttributes,
+	CLIENT_ID *ClientId);
+
 class API
 {
 public:
@@ -75,6 +84,7 @@ public:
 
 	hZwQuerySystemInformation ZwQuerySystemInformation;
 	hZwQueryInformationProcess ZwQueryInformationProcess;
+	hZwOpenProcess ZwOpenProcess;
 
 };
 

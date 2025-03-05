@@ -82,33 +82,48 @@ void ProcessManage::InitProcessList() {
 }
 
 void ProcessManage::InitProcessPath() {
-	ULONG m_BufferSize = 0;
-	PVOID m_Buffer = nullptr;
-	NTSTATUS status = api.ZwQueryInformationProcess(ULongToHandle(processList[8].pid), ProcessImageFileName, nullptr, 0, &m_BufferSize);
 
-	if (m_BufferSize == 0) {
-		std::cerr << "Failed to get buffer size" << std::endl;
-		return;
+	for (int i = 0; i < processList.size(); i++) {
+		ULONG m_BufferSize = 0;
+		PVOID m_Buffer = nullptr;
+
+		HANDLE hProcess;
+		OBJECT_ATTRIBUTES ObjectAttributes;
+		InitializeObjectAttributes(&ObjectAttributes, NULL, NULL, NULL, NULL);
+		CLIENT_ID clientID = { 0 };
+		clientID.UniqueProcess = ULongToHandle(processList[i].pid);
+		NTSTATUS status = api.ZwOpenProcess(&hProcess, PROCESS_QUERY_LIMITED_INFORMATION, &ObjectAttributes, &clientID);
+
+		status = api.ZwQueryInformationProcess(hProcess, ProcessImageFileName, nullptr, 0, &m_BufferSize);
+
+		if (m_BufferSize == 0) {
+			std::cerr << "Failed to get buffer size" << std::endl;
+			continue;
+		}
+
+		m_Buffer = malloc(m_BufferSize);
+		if (!m_Buffer) {
+			std::cerr << "Failed to allocate memory" << std::endl;
+			continue;
+		}
+
+		status = api.ZwQueryInformationProcess(hProcess, ProcessImageFileName, m_Buffer, m_BufferSize, nullptr);
+
+		if (!NT_SUCCESS(status)) {
+			std::cerr << "Failed to query process information" << std::endl;
+			free(m_Buffer);
+			m_Buffer = nullptr;
+			continue;
+		}
+
+		UNICODE_STRING newProcessInfo = *(PUNICODE_STRING)m_Buffer;
+		if (newProcessInfo.Buffer) {
+			processList[i].processPath = newProcessInfo.Buffer;
+		}
+		
+
 	}
 
-	m_Buffer = malloc(m_BufferSize);
-	if (!m_Buffer) {
-		std::cerr << "Failed to allocate memory" << std::endl;
-		return;
-	}
-
-	status = api.ZwQueryInformationProcess(ULongToHandle(processList[8].pid), ProcessImageFileName, m_Buffer, m_BufferSize, nullptr);
-
-	if (!NT_SUCCESS(status)) {
-		std::cerr << "Failed to query process information" << std::endl;
-		free(m_Buffer);
-		m_Buffer = nullptr;
-		return;
-	}
-
-	UNICODE_STRING newProcessInfo = *(PUNICODE_STRING)m_Buffer;
-	processList[8].processPath = newProcessInfo.Buffer;
-	std::wcout << processList[8].processPath << std::endl;
 
 	return;
 }

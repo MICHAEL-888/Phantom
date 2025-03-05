@@ -40,7 +40,15 @@ void API::InitProcAdress()
 		(hZwQueryInformationProcess)GetProcAddress(hNtDll, "ZwQueryInformationProcess");
 
 	if (!ZwQueryInformationProcess) {
-		std::cerr << "Failed to get ZwQuerySystemInformation address" << std::endl;
+		std::cerr << "Failed to get ZwQueryInformationProcess address" << std::endl;
+		return;
+	}
+
+	ZwOpenProcess = 
+		(hZwOpenProcess)GetProcAddress(hNtDll, "ZwOpenProcess");
+
+	if (!ZwOpenProcess) {
+		std::cerr << "Failed to get ZwQueryInformationProcess address" << std::endl << std::flush;
 		return;
 	}
 
