@@ -8,8 +8,7 @@ class ProcessManage {
 public:
   ProcessManage();
   ~ProcessManage();
-  void InitProcessList();
-  void InitProcessPath();
+  
 
 private:
 	class ProcessList {
@@ -19,8 +18,13 @@ private:
 		std::wstring m_processPath;
 	};
 
-	std::vector<ProcessList> processList;
+	std::vector<ProcessList> m_processList;
 
+	void InitProcessList();
+	void InitProcessPath();
 	void NtPathToDos();
+	bool IsPidExistedInSystem(ULONG pid);
+	bool IsPidExistedInList(ULONG pid);
+	void DetectHiddenProcessByPid();
 
 };

@@ -10,6 +10,7 @@ API api;
 ProcessManage::ProcessManage() {
 	InitProcessList();
 	InitProcessPath();
+	NtPathToDos();
 }
 
 ProcessManage::~ProcessManage() {}
@@ -56,8 +57,8 @@ void ProcessManage::InitProcessList() {
 	// 遍历进程信息
 
 	while (true) {
-		processList.emplace_back();
-		ProcessList& newProcess = processList.back();
+		m_processList.emplace_back();
+		ProcessList& newProcess = m_processList.back();
 		if (processInfo->ImageName.Buffer) {
 			newProcess.m_pid = HandleToULong(processInfo->UniqueProcessId);
 			newProcess.m_processName = processInfo->ImageName.Buffer;
@@ -84,7 +85,7 @@ void ProcessManage::InitProcessList() {
 
 void ProcessManage::InitProcessPath() {
 
-	for (int i = 0; i < processList.size(); i++) {
+	for (int i = 0; i < m_processList.size(); i++) {
 		ULONG m_BufferSize = 0;
 		PVOID m_Buffer = nullptr;
 
@@ -92,8 +93,13 @@ void ProcessManage::InitProcessPath() {
 		OBJECT_ATTRIBUTES ObjectAttributes;
 		InitializeObjectAttributes(&ObjectAttributes, NULL, NULL, NULL, NULL);
 		CLIENT_ID clientID = { 0 };
-		clientID.UniqueProcess = ULongToHandle(processList[i].m_pid);
+		clientID.UniqueProcess = ULongToHandle(m_processList[i].m_pid);
 		NTSTATUS status = api.ZwOpenProcess(&hProcess, PROCESS_QUERY_LIMITED_INFORMATION, &ObjectAttributes, &clientID);
+
+		if (!NT_SUCCESS(status)) {
+			std::cerr << "ProcessManage::InitProcessPath \"Failed to open process\"" << std::endl;
+			continue;
+		}
 
 		status = api.ZwQueryInformationProcess(hProcess, ProcessImageFileName, nullptr, 0, &m_BufferSize);
 
@@ -119,12 +125,13 @@ void ProcessManage::InitProcessPath() {
 
 		UNICODE_STRING newProcessInfo = *(PUNICODE_STRING)m_Buffer;
 		if (newProcessInfo.Buffer) {
-			processList[i].m_processPath = newProcessInfo.Buffer;
+			m_processList[i].m_processPath = newProcessInfo.Buffer;
 		}
+
+		CloseHandle(hProcess);
 		
 
 	}
-	NtPathToDos();
 
 	return;
 }
@@ -148,7 +155,7 @@ void ProcessManage::NtPathToDos() {
 	} while (driver != L'Z');
 
 	for (const auto& p : driverList) {
-		for (auto& p2 : processList) {
+		for (auto& p2 : m_processList) {
 			if (p2.m_processPath.find(p.first) == 0) {
 				p2.m_processPath.replace(0, p.first.length(), p.second);
 			}
@@ -159,17 +166,34 @@ void ProcessManage::NtPathToDos() {
 	
 }
 
-bool PsIsDeleted(ULONG pid) {
-	bool result = false;
+bool ProcessManage::IsPidExistedInSystem(ULONG pid) {
+	bool result = true;
 	HANDLE phd = api.ZwOpenProcess(SYNCHRONIZE, FALSE, pid);
 	if (phd) {
 		if (WaitForSingleObject(phd, 0) == WAIT_OBJECT_0)	//signal
-			result = true;
+			result = false;
 		CloseHandle(phd);
 	}
 	else {
 		if (GetLastError() == ERROR_INVALID_PARAMETER)	//87
-			result = true;
+			result = false;
 	}
 	return result;
+}
+
+bool ProcessManage::IsPidExistedInList(ULONG pid) {
+	bool exsited = false;
+	
+	for (const auto& p : m_processList) {
+		if (p.m_pid == pid) {
+			exsited = true;
+			break;
+		}
+	}
+
+	return exsited;
+}
+
+void ProcessManage::DetectHiddenProcessByPid() {
+
 }

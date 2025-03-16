@@ -109,10 +109,12 @@ public:
 	
 	
 private:
+	HMODULE m_hNtDll;
+
 	hZwQuerySystemInformation m_ZwQuerySystemInformation;
 	hZwQueryInformationProcess m_ZwQueryInformationProcess;
 	hZwOpenProcess m_ZwOpenProcess;
-	HMODULE m_hNtDll;
+	
 
 };
 
