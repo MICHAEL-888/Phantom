@@ -20,4 +20,6 @@ private:
 	};
 	std::vector<ProcessList> processList;
 
+	void NtPathToDos();
+
 };

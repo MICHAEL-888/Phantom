@@ -3,6 +3,7 @@
 #include <iostream>
 #include <winternl.h>
 #include "API.h"
+#include <unordered_map>
 
 API api;
 
@@ -123,7 +124,37 @@ void ProcessManage::InitProcessPath() {
 		
 
 	}
-
+	NtPathToDos();
 
 	return;
+}
+
+void ProcessManage::NtPathToDos() {
+	std::unordered_map<std::wstring, std::wstring> driverList;
+	WCHAR driver = L'A';
+	do {
+		std::wstring tmp;
+		tmp.push_back(driver);
+		tmp.push_back(L':');
+		LPWSTR lpDeviceName = tmp.data();
+		WCHAR lpTargetPath[1000] = { 0 };
+		DWORD ucchMax = 1000;
+		DWORD status = QueryDosDeviceW(lpDeviceName, lpTargetPath, ucchMax);
+		if (status) {
+				driverList.emplace(lpTargetPath, tmp);
+		}
+		
+		driver++;
+	} while (driver != L'Z');
+
+	for (const auto& p : driverList) {
+		for (auto& p2 : processList) {
+			if (p2.processPath.find(p.first) == 0) {
+				p2.processPath.replace(0, p.first.length(), p.second);
+			}
+		}
+	}
+
+	return;
+	
 }
