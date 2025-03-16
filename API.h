@@ -80,11 +80,39 @@ public:
 	void InitModuleHandle();
 	void InitProcAdress();
 
-	HMODULE hNtDll;
+	NTSTATUS ZwOpenProcess(
+		PHANDLE ProcessHandle, 
+		ACCESS_MASK DesiredAccess, 
+		POBJECT_ATTRIBUTES ObjectAttributes, 
+		CLIENT_ID* ClientId
+	);
+	HANDLE ZwOpenProcess(
+		DWORD dwDesiredAccess, 
+		BOOL bInheritHandle, 	//第二个参数没用，为了对齐OpenProcess格式
+		DWORD dwProcessId
+	);	
+	
+	NTSTATUS ZwQueryInformationProcess(
+		HANDLE ProcessHandle, 
+		PROCESSINFOCLASS ProcessInformationClass,
+		PVOID ProcessInformation, 
+		ULONG ProcessInformationLength, 
+		PULONG ReturnLength
+	);
 
-	hZwQuerySystemInformation ZwQuerySystemInformation;
-	hZwQueryInformationProcess ZwQueryInformationProcess;
-	hZwOpenProcess ZwOpenProcess;
+	NTSTATUS ZwQuerySystemInformation(
+		SYSTEM_INFORMATION_CLASS SystemInformationClass,
+		PVOID SystemInformation,
+		ULONG SystemInformationLength,
+		PULONG ReturnLength
+	);
+	
+	
+private:
+	hZwQuerySystemInformation m_ZwQuerySystemInformation;
+	hZwQueryInformationProcess m_ZwQueryInformationProcess;
+	hZwOpenProcess m_ZwOpenProcess;
+	HMODULE m_hNtDll;
 
 };
 

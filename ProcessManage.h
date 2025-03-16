@@ -13,11 +13,12 @@ public:
 
 private:
 	class ProcessList {
-	public: // ÐÞ¸Ä·ÃÎÊÐÞÊÎ·ûÎª public
-		ULONG pid;
-		std::wstring processName;
-		std::wstring processPath;
+	public:
+		ULONG m_pid;
+		std::wstring m_processName;
+		std::wstring m_processPath;
 	};
+
 	std::vector<ProcessList> processList;
 
 	void NtPathToDos();

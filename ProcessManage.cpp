@@ -27,14 +27,14 @@ void ProcessManage::InitProcessList() {
 		0, &m_BufferSize);
 
 	if (m_BufferSize == 0) {
-		std::cerr << "Failed to get buffer size" << std::endl;
+		std::cerr << "ProcessManage::InitProcessList \"Failed to get buffer size\"" << std::endl;
 		return;
 	}
 
 	// 分配内存
 	m_Buffer = malloc(m_BufferSize);
 	if (!m_Buffer) {
-		std::cerr << "Failed to allocate memory" << std::endl;
+		std::cerr << "ProcessManage::InitProcessList \"Failed to allocate memory\"" << std::endl;
 		return;
 	}
 
@@ -43,7 +43,7 @@ void ProcessManage::InitProcessList() {
 		m_BufferSize, nullptr);
 
 	if (!NT_SUCCESS(status)) {
-		std::cerr << "Failed to query system information" << std::endl;
+		std::cerr << "ProcessManage::InitProcessList \"Failed to query system information\"" << std::endl;
 		free(m_Buffer);
 		m_Buffer = nullptr;
 		return;
@@ -59,12 +59,12 @@ void ProcessManage::InitProcessList() {
 		processList.emplace_back();
 		ProcessList& newProcess = processList.back();
 		if (processInfo->ImageName.Buffer) {
-			newProcess.pid = HandleToULong(processInfo->UniqueProcessId);
-			newProcess.processName = processInfo->ImageName.Buffer;
+			newProcess.m_pid = HandleToULong(processInfo->UniqueProcessId);
+			newProcess.m_processName = processInfo->ImageName.Buffer;
 		}
 		else {
-			newProcess.pid = HandleToULong(processInfo->UniqueProcessId);
-			newProcess.processName = L"系统空闲进程";
+			newProcess.m_pid = HandleToULong(processInfo->UniqueProcessId);
+			newProcess.m_processName = L"系统空闲进程";
 		}
 
 		if (processInfo->NextEntryOffset == 0) {
@@ -92,26 +92,26 @@ void ProcessManage::InitProcessPath() {
 		OBJECT_ATTRIBUTES ObjectAttributes;
 		InitializeObjectAttributes(&ObjectAttributes, NULL, NULL, NULL, NULL);
 		CLIENT_ID clientID = { 0 };
-		clientID.UniqueProcess = ULongToHandle(processList[i].pid);
+		clientID.UniqueProcess = ULongToHandle(processList[i].m_pid);
 		NTSTATUS status = api.ZwOpenProcess(&hProcess, PROCESS_QUERY_LIMITED_INFORMATION, &ObjectAttributes, &clientID);
 
 		status = api.ZwQueryInformationProcess(hProcess, ProcessImageFileName, nullptr, 0, &m_BufferSize);
 
 		if (m_BufferSize == 0) {
-			std::cerr << "Failed to get buffer size" << std::endl;
+			std::cerr << "ProcessManage::InitProcessPath \"Failed to get buffer size\"" << std::endl;
 			continue;
 		}
 
 		m_Buffer = malloc(m_BufferSize);
 		if (!m_Buffer) {
-			std::cerr << "Failed to allocate memory" << std::endl;
+			std::cerr << "ProcessManage::InitProcessPath \"Failed to allocate memory\"" << std::endl;
 			continue;
 		}
 
 		status = api.ZwQueryInformationProcess(hProcess, ProcessImageFileName, m_Buffer, m_BufferSize, nullptr);
 
 		if (!NT_SUCCESS(status)) {
-			std::cerr << "Failed to query process information" << std::endl;
+			std::cerr << "ProcessManage::InitProcessPath \"Failed to query process information\"" << std::endl;
 			free(m_Buffer);
 			m_Buffer = nullptr;
 			continue;
@@ -119,7 +119,7 @@ void ProcessManage::InitProcessPath() {
 
 		UNICODE_STRING newProcessInfo = *(PUNICODE_STRING)m_Buffer;
 		if (newProcessInfo.Buffer) {
-			processList[i].processPath = newProcessInfo.Buffer;
+			processList[i].m_processPath = newProcessInfo.Buffer;
 		}
 		
 
@@ -149,12 +149,27 @@ void ProcessManage::NtPathToDos() {
 
 	for (const auto& p : driverList) {
 		for (auto& p2 : processList) {
-			if (p2.processPath.find(p.first) == 0) {
-				p2.processPath.replace(0, p.first.length(), p.second);
+			if (p2.m_processPath.find(p.first) == 0) {
+				p2.m_processPath.replace(0, p.first.length(), p.second);
 			}
 		}
 	}
 
 	return;
 	
+}
+
+bool PsIsDeleted(ULONG pid) {
+	bool result = false;
+	HANDLE phd = api.ZwOpenProcess(SYNCHRONIZE, FALSE, pid);
+	if (phd) {
+		if (WaitForSingleObject(phd, 0) == WAIT_OBJECT_0)	//signal
+			result = true;
+		CloseHandle(phd);
+	}
+	else {
+		if (GetLastError() == ERROR_INVALID_PARAMETER)	//87
+			result = true;
+	}
+	return result;
 }
