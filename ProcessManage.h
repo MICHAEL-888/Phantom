@@ -11,20 +11,24 @@ public:
   
 
 private:
-	class ProcessList {
+	class ProcessInfo {
 	public:
 		ULONG m_pid;
 		std::wstring m_processName;
 		std::wstring m_processPath;
+		bool m_isHide = false;
 	};
 
-	std::vector<ProcessList> m_processList;
+	std::vector<ProcessInfo> m_processList;
 
 	void InitProcessList();
 	void InitProcessPath();
-	void NtPathToDos();
-	bool IsPidExistedInSystem(ULONG pid);
-	bool IsPidExistedInList(ULONG pid);
-	void DetectHiddenProcessByPid();
+	std::wstring DosPathToName(const std::wstring& path);
+	void ListNtPathToDos();
+	std::wstring PidToDosPath(const ULONG pid);
+	bool IsPidExistedInSystem(const ULONG pid);
+	bool IsPidExistedInList(const ULONG pid);
+	std::vector<ProcessInfo> DetectHiddenProcessByPid();
+
 
 };
