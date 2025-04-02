@@ -1,1 +1,6 @@
-﻿  Phantom_ARK.vcxproj -> C:\Users\Michael\source\repos\Phantom\x64\Debug\Phantom_ARK.exe
+﻿  ProcessManage.cpp
+  main.cpp
+C:\Users\Michael\source\repos\Phantom\main.cpp(6,19): warning C4101: “privilegeElevate”: 未引用的局部变量
+  正在生成代码...
+MSVCRTD.lib(exe_wwinmain.obj) : error LNK2019: 无法解析的外部符号 wWinMain，函数 "int __cdecl invoke_main(void)" (?invoke_main@@YAHXZ) 中引用了该符号
+C:\Users\Michael\source\repos\Phantom\x64\Debug\Phantom_ARK.exe : fatal error LNK1120: 1 个无法解析的外部命令

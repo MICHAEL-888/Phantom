@@ -181,13 +181,21 @@ bool ProcessManage::IsPidExistedInSystem(ULONG pid) {
 	bool result = true;
 	HANDLE phd = api.ZwOpenProcess(SYNCHRONIZE, FALSE, pid);
 	if (phd) {
-		if (WaitForSingleObject(phd, 0) == WAIT_OBJECT_0) // signal
+		if (WaitForSingleObject(phd, 0) == WAIT_OBJECT_0) { // signal
 			result = false;
-		CloseHandle(phd);
+		}
+		DWORD exitCode;
+		if (GetExitCodeProcess(phd, &exitCode)) {
+			if (exitCode != STILL_ACTIVE) {
+				result = false;
+			}
+			CloseHandle(phd);
+		}
 	}
 	else {
-		if (GetLastError() == ERROR_INVALID_PARAMETER) // 87
+		if (GetLastError() == ERROR_INVALID_PARAMETER) { // 87
 			result = false;
+		}
 	}
 	return result;
 }
