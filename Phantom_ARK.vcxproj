@@ -231,6 +231,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="API.cpp" />
+    <ClCompile Include="PrivilegeElevate.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ProcessManage.cpp" />
   </ItemGroup>
@@ -239,6 +240,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="API.h" />
+    <ClInclude Include="PrivilegeElevate.h" />
     <ClInclude Include="ProcessManage.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

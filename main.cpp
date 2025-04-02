@@ -1,9 +1,12 @@
 #include <iostream>
 #include "ProcessManage.h"
+#include "PrivilegeElevate.h"
 
 int main() {
-    ProcessManage processManage;
+	PrivilegeElevate privilegeElevate;
+	//privilegeElevate.AdmintoSystem();
+	ProcessManage processManage;
 
-    system("pause");
-    return 0;
+	system("pause");
+	return 0;
 }

@@ -3,23 +3,20 @@
 #include <iostream>
 #include <winternl.h>
 
-
-// [ZwQuerySystemInformation 自Windows 8起不再可用。 请改用本主题中列出的备用函数。]
-// 必须动态调用，首先声明函数指针
+// [ZwQuerySystemInformation 自Windows 8起不再可用。
+// 请改用本主题中列出的备用函数。] 必须动态调用，首先声明函数指针
 typedef NTSTATUS(WINAPI* hZwQuerySystemInformation)(
-	SYSTEM_INFORMATION_CLASS SystemInformationClass,
-	PVOID SystemInformation,
-	ULONG SystemInformationLength,
-	PULONG ReturnLength);
+	SYSTEM_INFORMATION_CLASS SystemInformationClass, PVOID SystemInformation,
+	ULONG SystemInformationLength, PULONG ReturnLength);
 
-//NTSTATUS WINAPI ZwQuerySystemInformation(
+// NTSTATUS WINAPI ZwQuerySystemInformation(
 //	_In_      SYSTEM_INFORMATION_CLASS SystemInformationClass,
 //	_Inout_   PVOID                    SystemInformation,
 //	_In_      ULONG                    SystemInformationLength,
 //	_Out_opt_ PULONG                   ReturnLength
 //);
 
-//typedef struct _SYSTEM_PROCESS_INFORMATION {
+// typedef struct _SYSTEM_PROCESS_INFORMATION {
 //	ULONG NextEntryOffset;
 //	ULONG NumberOfThreads;
 //	BYTE Reserved1[48];
@@ -43,19 +40,18 @@ typedef NTSTATUS(WINAPI* hZwQuerySystemInformation)(
 //	SIZE_T PeakPagefileUsage;
 //	SIZE_T PrivatePageCount;
 //	LARGE_INTEGER Reserved7[6];
-//} SYSTEM_PROCESS_INFORMATION, * PSYSTEM_PROCESS_INFORMATION;
+// } SYSTEM_PROCESS_INFORMATION, * PSYSTEM_PROCESS_INFORMATION;
 
-//如果使用 ZwQueryInformationProcess，请通过 运行时动态链接访问函数。 
-//这样，代码就有机会在操作系统中更改或删除函数时正常响应。 但是，签名更改可能无法检测到。
-//此函数没有关联的导入库。 必须使用 LoadLibrary 和 GetProcAddress 函数动态链接到 Ntdll.dll。
+// 如果使用 ZwQueryInformationProcess，请通过 运行时动态链接访问函数。
+// 这样，代码就有机会在操作系统中更改或删除函数时正常响应。
+// 但是，签名更改可能无法检测到。 此函数没有关联的导入库。 必须使用 LoadLibrary
+// 和 GetProcAddress 函数动态链接到 Ntdll.dll。
 typedef NTSTATUS(WINAPI* hZwQueryInformationProcess)(
-	HANDLE ProcessHandle,
-	PROCESSINFOCLASS ProcessInformationClass,
-	PVOID ProcessInformation,
-	ULONG ProcessInformationLength,
+	HANDLE ProcessHandle, PROCESSINFOCLASS ProcessInformationClass,
+	PVOID ProcessInformation, ULONG ProcessInformationLength,
 	PULONG ReturnLength);
 
-//NTSTATUS WINAPI ZwQueryInformationProcess(
+// NTSTATUS WINAPI ZwQueryInformationProcess(
 //	_In_      HANDLE           ProcessHandle,
 //	_In_      PROCESSINFOCLASS ProcessInformationClass,
 //	_Out_     PVOID            ProcessInformation,
@@ -63,58 +59,65 @@ typedef NTSTATUS(WINAPI* hZwQueryInformationProcess)(
 //	_Out_opt_ PULONG           ReturnLength
 //);
 
-
 // msdn文档中第四个参数为PCLIENT_ID ClientId，此处手动调整一下。
 
-typedef NTSTATUS(WINAPI* hZwOpenProcess)(
-	PHANDLE ProcessHandle,
+typedef NTSTATUS(WINAPI* hZwOpenProcess)(PHANDLE ProcessHandle,
 	ACCESS_MASK DesiredAccess,
 	POBJECT_ATTRIBUTES ObjectAttributes,
-	CLIENT_ID *ClientId);
+	CLIENT_ID* ClientId);
 
-class API
-{
+typedef NTSTATUS(WINAPI* hZwOpenProcessToken)(HANDLE ProcessHandle,
+	ACCESS_MASK DesiredAccess,
+	PHANDLE TokenHandle);
+
+typedef NTSTATUS(NTAPI* hZwDuplicateToken)(HANDLE ExistingTokenHandle,
+	ACCESS_MASK DesiredAccess,
+	POBJECT_ATTRIBUTES ObjectAttributes,
+	BOOLEAN EffectiveOnly,
+	TOKEN_TYPE Type,
+	PHANDLE NewTokenHandle);
+
+class API {
 public:
 	API();
 	~API();
 	void InitModuleHandle();
 	void InitProcAdress();
 
-	NTSTATUS ZwOpenProcess(
-		PHANDLE ProcessHandle, 
-		ACCESS_MASK DesiredAccess, 
-		POBJECT_ATTRIBUTES ObjectAttributes, 
-		CLIENT_ID* ClientId
-	);
-	HANDLE ZwOpenProcess(
-		DWORD dwDesiredAccess, 
-		BOOL bInheritHandle, 	//第二个参数没用，为了对齐OpenProcess格式
-		DWORD dwProcessId
-	);	
-	
-	NTSTATUS ZwQueryInformationProcess(
-		HANDLE ProcessHandle, 
-		PROCESSINFOCLASS ProcessInformationClass,
-		PVOID ProcessInformation, 
-		ULONG ProcessInformationLength, 
-		PULONG ReturnLength
-	);
+	NTSTATUS ZwOpenProcess(PHANDLE ProcessHandle, ACCESS_MASK DesiredAccess,
+		POBJECT_ATTRIBUTES ObjectAttributes,
+		CLIENT_ID* ClientId);
+	HANDLE
+		ZwOpenProcess(DWORD dwDesiredAccess,
+			BOOL bInheritHandle, // 第二个参数没用，为了对齐OpenProcess格式
+			DWORD dwProcessId);
 
-	NTSTATUS ZwQuerySystemInformation(
-		SYSTEM_INFORMATION_CLASS SystemInformationClass,
-		PVOID SystemInformation,
-		ULONG SystemInformationLength,
-		PULONG ReturnLength
-	);
-	
-	
+	NTSTATUS ZwQueryInformationProcess(HANDLE ProcessHandle,
+		PROCESSINFOCLASS ProcessInformationClass,
+		PVOID ProcessInformation,
+		ULONG ProcessInformationLength,
+		PULONG ReturnLength);
+
+	NTSTATUS
+		ZwQuerySystemInformation(SYSTEM_INFORMATION_CLASS SystemInformationClass,
+			PVOID SystemInformation,
+			ULONG SystemInformationLength, PULONG ReturnLength);
+
+	NTSTATUS ZwOpenProcessToken(HANDLE ProcessHandle, ACCESS_MASK DesiredAccess,
+		PHANDLE TokenHandle);
+
+	NTSTATUS ZwDuplicateToken(HANDLE ExistingTokenHandle,
+		ACCESS_MASK DesiredAccess,
+		POBJECT_ATTRIBUTES ObjectAttributes,
+		BOOLEAN EffectiveOnly, TOKEN_TYPE Type,
+		PHANDLE NewTokenHandle);
+
 private:
 	HMODULE m_hNtDll;
 
 	hZwQuerySystemInformation m_ZwQuerySystemInformation;
 	hZwQueryInformationProcess m_ZwQueryInformationProcess;
 	hZwOpenProcess m_ZwOpenProcess;
-	
-
+	hZwOpenProcessToken m_ZwOpenProcessToken;
+	hZwDuplicateToken m_ZwDuplicateToken;
 };
-

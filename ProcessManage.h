@@ -1,14 +1,13 @@
 #pragma once
 #include <Windows.h>
 #include <iostream>
-#include <winternl.h>
 #include <vector>
+#include <winternl.h>
 
 class ProcessManage {
 public:
-  ProcessManage();
-  ~ProcessManage();
-  
+	ProcessManage();
+	~ProcessManage();
 
 private:
 	class ProcessList {
@@ -26,5 +25,4 @@ private:
 	bool IsPidExistedInSystem(ULONG pid);
 	bool IsPidExistedInList(ULONG pid);
 	void DetectHiddenProcessByPid();
-
 };
