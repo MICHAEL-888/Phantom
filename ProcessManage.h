@@ -5,10 +5,6 @@
 #include <winternl.h>
 
 class ProcessManage {
-public:
-	ProcessManage();
-	~ProcessManage();
-
 private:
 	class ProcessList {
 	public:
@@ -25,4 +21,13 @@ private:
 	bool IsPidExistedInSystem(ULONG pid);
 	bool IsPidExistedInList(ULONG pid);
 	void DetectHiddenProcessByPid();
+
+public:
+	ProcessManage();
+	~ProcessManage();
+	const std::vector<ProcessManage::ProcessList>& GetProcessList() const {
+		return m_processList;
+	}
+
+
 };
