@@ -10,7 +10,8 @@ API api;
 ProcessManage::ProcessManage() {
 	InitProcessList();
 	InitProcessPath();
-	NtPathToDos();
+	DetectHiddenProcessByPid(m_processList);
+	ListNtPathToDos();
 }
 
 ProcessManage::~ProcessManage() {}
@@ -62,7 +63,7 @@ void ProcessManage::InitProcessList() {
 
 	while (true) {
 		m_processList.emplace_back();
-		ProcessList& newProcess = m_processList.back();
+		ProcessInfo& newProcess = m_processList.back();
 		if (processInfo->ImageName.Buffer) {
 			newProcess.m_pid = HandleToULong(processInfo->UniqueProcessId);
 			newProcess.m_processName = processInfo->ImageName.Buffer;
@@ -148,7 +149,11 @@ void ProcessManage::InitProcessPath() {
 	return;
 }
 
-void ProcessManage::NtPathToDos() {
+std::wstring ProcessManage::DosPathGetFileName(const std::wstring& path) {
+	return path.substr(path.find_last_of(L"\\/") + 1);
+}
+
+void ProcessManage::ListNtPathToDos() {
 	std::unordered_map<std::wstring, std::wstring> driverList;
 	WCHAR driver = L'A';
 	do {
@@ -175,6 +180,54 @@ void ProcessManage::NtPathToDos() {
 	}
 
 	return;
+}
+
+std::wstring ProcessManage::PidToDosPath(const ULONG pid) {
+	ULONG m_BufferSize = 0;
+	PVOID m_Buffer = nullptr;
+
+	HANDLE hProcess;
+	OBJECT_ATTRIBUTES ObjectAttributes;
+	InitializeObjectAttributes(&ObjectAttributes, NULL, NULL, NULL, NULL);
+	CLIENT_ID clientID = { 0 };
+	clientID.UniqueProcess = ULongToHandle(pid);
+	NTSTATUS status = api.ZwOpenProcess(&hProcess, PROCESS_QUERY_LIMITED_INFORMATION, &ObjectAttributes, &clientID);
+
+	if (!NT_SUCCESS(status)) {
+		std::cerr << "ProcessManage::PidToDosPath \"Failed to open process\"" << std::endl;
+		return L"";
+	}
+	status = api.ZwQueryInformationProcess(hProcess, ProcessImageFileName, nullptr, 0, &m_BufferSize);
+
+	if (m_BufferSize == 0) {
+		std::cerr << "ProcessManage::PidToDosPath \"Failed to get buffer size\"" << std::endl;
+		return L"";
+	}
+
+	m_Buffer = malloc(m_BufferSize);
+	if (!m_Buffer) {
+		std::cerr << "ProcessManage::PidToDosPath \"Failed to allocate memory\"" << std::endl;
+		return L"";
+	}
+
+	status = api.ZwQueryInformationProcess(hProcess, ProcessImageFileName, m_Buffer, m_BufferSize, nullptr);
+
+	if (!NT_SUCCESS(status)) {
+		std::cerr << "ProcessManage::PidToDosPath \"Failed to query process information\"" << std::endl;
+		free(m_Buffer);
+		m_Buffer = nullptr;
+		return L"";
+	}
+
+	UNICODE_STRING newProcessInfo = *(PUNICODE_STRING)m_Buffer;
+	if (newProcessInfo.Buffer) {
+		CloseHandle(hProcess);
+		return newProcessInfo.Buffer;
+	}
+
+	CloseHandle(hProcess);
+	return L"";
+
 }
 
 bool ProcessManage::IsPidExistedInSystem(ULONG pid) {
@@ -213,4 +266,23 @@ bool ProcessManage::IsPidExistedInList(ULONG pid) {
 	return exsited;
 }
 
-void ProcessManage::DetectHiddenProcessByPid() {}
+bool ProcessManage::DetectHiddenProcessByPid(std::vector<ProcessInfo>& processList) {
+
+	for (ULONG pid = 8; pid < 65536; pid += 4) {	// 此处参考openark设置pid枚举上限
+		if (!IsPidExistedInList(pid)) {
+			if (IsPidExistedInSystem(pid)) {
+				std::wstring path = PidToDosPath(pid);
+				if (path != L"") {
+					processList.emplace_back();
+					ProcessInfo& newProcess = processList.back();
+					newProcess.m_pid = pid;
+					newProcess.m_processName = DosPathGetFileName(path);
+					newProcess.m_processPath = path;
+					newProcess.m_isHide = true;
+				}
+			}
+		}
+	}
+
+	return true;
+}

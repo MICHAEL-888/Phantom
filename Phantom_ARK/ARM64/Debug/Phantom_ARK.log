@@ -1,2 +1,5 @@
 ﻿  main.cpp
+C:\Users\Michael\source\repos\Phantom\ProcessManage.h(36,28): warning C4267: “return”: 从“size_t”转换到“const int”，可能丢失数据
+  (编译源文件“main.cpp”)
+  
   Phantom_ARK.vcxproj -> C:\Users\Michael\source\repos\Phantom\ARM64\Debug\Phantom_ARK.exe

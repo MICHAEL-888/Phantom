@@ -4,6 +4,7 @@
 #include <winuser.h>
 #include <commctrl.h>
 #include <string>
+#include <sstream>
 #include "ProcessManage.h"
 #include "PrivilegeElevate.h"
 
@@ -14,6 +15,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #define STATUSBAR_ID_1 1000
 #define TABCONTROL_ID_1 2000
 #define LISTVIEW_ID_1 3000
+#define BUTTON_ID_1 4000
 
 //int main() {
 //	PrivilegeElevate privilegeElevate;
@@ -75,6 +77,10 @@ void FillProcessListView(HWND hwndListView, const ProcessManage& processManager)
 
         // 设置第三列（进程路径）
         ListView_SetItemText(hwndListView, index, 2, const_cast<LPWSTR>(processList[i].m_processPath.c_str()));
+        
+        // 设置第四列（隐藏进程检测）
+        std::wstring isHideStr = processList[i].m_isHide ? L"true" : L"false";
+        ListView_SetItemText(hwndListView, index, 3, const_cast<LPWSTR>(isHideStr.c_str()));
 
         
     }
@@ -92,6 +98,10 @@ LRESULT CALLBACK MainWndProc(
     static HWND hwndTab;
     static HFONT hFont;
     static HWND hwndListView;
+    static HWND hwndElevateButton;
+
+    static int statwidths[] = { 800, -1 };  // -1 表示延伸到窗口右边
+    static std::wstring statusText;
 
     switch (uMsg)
     {
@@ -127,6 +137,18 @@ LRESULT CALLBACK MainWndProc(
             (HMENU)STATUSBAR_ID_1, 
             GetModuleHandle(NULL), 
             NULL);
+
+        // 设置状态栏分区
+        
+        SendMessage(hwndStatus, SB_SETPARTS, 2, (LPARAM)statwidths);
+
+        // 设置初始状态栏文本
+        
+        statusText = L"进程数量：" + std::to_wstring(processManage.GetProcessCount())
+            + L"    检测到隐藏进程：" + std::to_wstring(processManage.GetProcessHiddenCount());
+        SendMessage(hwndStatus, SB_SETTEXT, 0, (LPARAM)statusText.c_str());
+        SendMessage(hwndStatus, SB_SETTEXT, 1, (LPARAM)L"Phantom_ARK v1.0.0");
+
 
         // 选项卡
         hwndTab = CreateWindowEx(
@@ -186,11 +208,12 @@ LRESULT CALLBACK MainWndProc(
             LVS_EX_DOUBLEBUFFER | 
             LVS_EX_HEADERDRAGDROP | 
             LVS_EX_HEADERINALLVIEWS |
-            LVS_EX_LABELTIP);
+            LVS_EX_LABELTIP |
+            LVS_EX_TRANSPARENTBKGND);
 
         // 设置列标题
         LVCOLUMN lvColumn;
-        lvColumn.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
+        lvColumn.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM | LVCF_FMT;
         lvColumn.cx = 300;
         lvColumn.pszText = L"进程名称";
         ListView_InsertColumn(hwndListView, 0, &lvColumn);
@@ -203,8 +226,33 @@ LRESULT CALLBACK MainWndProc(
         lvColumn.pszText = L"进程路径";
         ListView_InsertColumn(hwndListView, 2, &lvColumn);
 
-        
+        lvColumn.cx = 180;
+        lvColumn.fmt = LVCFMT_CENTER;  // 设置居中对齐
+        lvColumn.pszText = L"隐藏进程检测";
+        ListView_InsertColumn(hwndListView, 3, &lvColumn);
+
         FillProcessListView(hwndListView, processManage);
+
+        hwndElevateButton = CreateWindowEx(
+            0,
+            L"BUTTON",
+            L"提升至SYSTEM权限",
+            WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+            10,  // x位置
+            rcTabClient.bottom + 4 + 10,  // y位置
+            200,  // 宽度
+            40,   // 高度
+            hwnd,
+            (HMENU)BUTTON_ID_1,
+            GetModuleHandle(NULL),
+            NULL
+        );
+
+        // 设置按钮字体
+        SendMessage(hwndElevateButton, WM_SETFONT, (WPARAM)hFont, TRUE);
+
+        // 初始隐藏按钮（因为默认显示第一个选项卡）
+        ShowWindow(hwndElevateButton, SW_HIDE);
 
 
 
@@ -249,22 +297,59 @@ LRESULT CALLBACK MainWndProc(
                 SWP_NOZORDER);
         }
 
+        // 调整提权按钮位置
+        if (hwndTab && hwndElevateButton)
+        {
+            RECT rcClient;
+            GetClientRect(hwnd, &rcClient);
+            RECT rcTabClient;
+            TabCtrl_GetItemRect(hwndTab, 0, &rcTabClient);
+            int tabHeight = rcTabClient.bottom + 4;
+
+            // 按钮位置调整
+            SetWindowPos(hwndElevateButton, NULL,
+                10,                    // x位置
+                tabHeight + 10,        // y位置
+                400,                   // 宽度
+                200,                    // 高度
+                SWP_NOZORDER);
+        }
+
         return 0;
 
     case WM_NOTIFY:
+
         if (((LPNMHDR)lParam)->idFrom == TABCONTROL_ID_1 && ((LPNMHDR)lParam)->code == TCN_SELCHANGE)
         {
             int iPage = TabCtrl_GetCurSel(hwndTab);
             if (iPage == 0)
             {
                 ShowWindow(hwndListView, SW_SHOW);
+                ShowWindow(hwndElevateButton, SW_HIDE);
             }
             else
             {
                 ShowWindow(hwndListView, SW_HIDE);
+                ShowWindow(hwndElevateButton, SW_SHOW);
             }
         }
         return 0;
+    case WM_COMMAND:
+        if (LOWORD(wParam) == BUTTON_ID_1 && HIWORD(wParam) == BN_CLICKED)
+        {
+            // 创建提权对象并执行提权操作
+            PrivilegeElevate privilegeElevate;
+            if (privilegeElevate.AdmintoSystem())
+            {
+                exit(0);
+            }
+            else
+            {
+                MessageBox(hwnd, L"提权失败！", L"错误", MB_ICONERROR);
+            }
+            return 0;
+        }
+        break;
     case WM_DESTROY:
         // Clean up window-specific data objects. 
         // 清理字体资源
