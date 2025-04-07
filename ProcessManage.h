@@ -47,5 +47,6 @@ public:
 		return cnt;
 	}
 
+	void RefreshProcessList();
 
 };

@@ -286,3 +286,11 @@ bool ProcessManage::DetectHiddenProcessByPid(std::vector<ProcessInfo>& processLi
 
 	return true;
 }
+
+void ProcessManage::RefreshProcessList() {
+	m_processList.clear();
+	InitProcessList();
+	InitProcessPath();
+	DetectHiddenProcessByPid(m_processList);
+	ListNtPathToDos();
+}

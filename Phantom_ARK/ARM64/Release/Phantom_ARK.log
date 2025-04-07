@@ -1,11 +1,1 @@
-﻿  ProcessManage.cpp
-C:\Users\Michael\source\repos\Phantom\ProcessManage.h(36,28): warning C4267: “return”: 从“size_t”转换到“const int”，可能丢失数据
-  (编译源文件“ProcessManage.cpp”)
-  
-  main.cpp
-C:\Users\Michael\source\repos\Phantom\ProcessManage.h(36,28): warning C4267: “return”: 从“size_t”转换到“const int”，可能丢失数据
-  (编译源文件“main.cpp”)
-  
-  正在生成代码...
-LINK : warning LNK4075: 忽略“/INCREMENTAL”(由于“/OPT:ICF”规范)
-  Phantom_ARK.vcxproj -> C:\Users\Michael\source\repos\Phantom\ARM64\Release\Phantom_ARK.exe
+﻿  Phantom_ARK.vcxproj -> C:\Users\Michael\source\repos\Phantom\ARM64\Release\Phantom_ARK.exe

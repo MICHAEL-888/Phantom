@@ -1,0 +1,7 @@
+﻿  API.cpp
+  PrivilegeElevate.cpp
+  main.cpp
+  ProcessManage.cpp
+C:\Users\Michael\source\repos\Phantom\ProcessManage.cpp(92,20): warning C4018: “<”: 有符号/无符号不匹配
+  正在生成代码...
+  Phantom_ARK.vcxproj -> C:\Users\Michael\source\repos\Phantom\Debug\Phantom_ARK.exe
