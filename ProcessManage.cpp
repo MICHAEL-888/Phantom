@@ -8,10 +8,7 @@
 API api;
 
 ProcessManage::ProcessManage() {
-	InitProcessList();
-	InitProcessPath();
-	DetectHiddenProcessByPid(m_processList);
-	ListNtPathToDos();
+	RefreshProcessList();
 }
 
 ProcessManage::~ProcessManage() {}
@@ -36,6 +33,7 @@ void ProcessManage::InitProcessList() {
 	}
 
 	// 分配内存
+	m_BufferSize *= 2;
 	m_Buffer = malloc(m_BufferSize);
 	if (!m_Buffer) {
 		std::cerr << "ProcessManage::InitProcessList \"Failed to allocate memory\""
@@ -67,6 +65,9 @@ void ProcessManage::InitProcessList() {
 		if (processInfo->ImageName.Buffer) {
 			newProcess.m_pid = HandleToULong(processInfo->UniqueProcessId);
 			newProcess.m_processName = processInfo->ImageName.Buffer;
+			newProcess.m_threadsNum = processInfo->NumberOfThreads;
+			newProcess.m_parrentProcessId = HandleToULong(processInfo->Reserved2);
+			//newProcess.m_createTime = *reinterpret_cast<PLARGE_INTEGER>(processInfo + 0x20);
 		}
 		else {
 			newProcess.m_pid = HandleToULong(processInfo->UniqueProcessId);
@@ -90,6 +91,14 @@ void ProcessManage::InitProcessList() {
 void ProcessManage::InitProcessPath() {
 
 	for (int i = 0; i < m_processList.size(); i++) {
+		if (m_processList[i].m_processName == L"Registry" && m_processList[i].m_pid <= 200) {
+			continue;
+		}
+
+		if (m_processList[i].m_processName == L"Memory Compression") {
+			continue;
+		}
+
 		ULONG m_BufferSize = 0;
 		PVOID m_Buffer = nullptr;
 
@@ -118,7 +127,9 @@ void ProcessManage::InitProcessPath() {
 			continue;
 		}
 
+		m_BufferSize *= 2;
 		m_Buffer = malloc(m_BufferSize);
+		//memset(&m_Buffer, 0, m_BufferSize);
 		if (!m_Buffer) {
 			std::cerr
 				<< "ProcessManage::InitProcessPath \"Failed to allocate memory\""
@@ -142,11 +153,63 @@ void ProcessManage::InitProcessPath() {
 		if (newProcessInfo.Buffer) {
 			m_processList[i].m_processPath = newProcessInfo.Buffer;
 		}
-
+		free(m_Buffer);
 		CloseHandle(hProcess);
 	}
 
 	return;
+}
+
+void ProcessManage::InitProcessPeb() {
+	for (int i = 0; i < m_processList.size(); i++) {
+		if (m_processList[i].m_processName == L"Registry" && m_processList[i].m_pid <= 200) {
+			continue;
+		}
+
+		if (m_processList[i].m_processName == L"Memory Compression") {
+			continue;
+		}
+
+		ULONG m_BufferSize = 0;
+		PROCESS_BASIC_INFORMATION m_Buffer = {0};
+
+		HANDLE hProcess;
+		OBJECT_ATTRIBUTES ObjectAttributes;
+		InitializeObjectAttributes(&ObjectAttributes, NULL, NULL, NULL, NULL);
+		CLIENT_ID clientID = { 0 };
+		clientID.UniqueProcess = ULongToHandle(m_processList[i].m_pid);
+		NTSTATUS status =
+			api.ZwOpenProcess(&hProcess, PROCESS_ALL_ACCESS,
+				&ObjectAttributes, &clientID);
+
+		if (!NT_SUCCESS(status)) {
+			std::cerr << "ProcessManage::InitProcessPeb \"Failed to open process\""
+				<< std::endl;
+			continue;
+		}
+
+		m_BufferSize = sizeof(m_Buffer);
+		//memset(&m_Buffer, 0, m_BufferSize);
+
+		status = api.ZwQueryInformationProcess(hProcess, ProcessBasicInformation,
+			&m_Buffer, m_BufferSize, nullptr);
+		if (!NT_SUCCESS(status)) {
+			std::cerr << "ProcessManage::InitProcessPeb \"Failed to query process "
+				"information\""
+				<< std::endl;
+			continue;
+		}
+
+
+		PROCESS_BASIC_INFORMATION newProcessInfo = m_Buffer;
+		if (newProcessInfo.PebBaseAddress) {
+			m_processList[i].m_peb = newProcessInfo.PebBaseAddress;
+		}
+		CloseHandle(hProcess);
+	}
+
+	return;
+
 }
 
 std::wstring ProcessManage::DosPathGetFileName(const std::wstring& path) {
@@ -242,7 +305,6 @@ bool ProcessManage::IsPidExistedInSystem(ULONG pid) {
 			if (exitCode != STILL_ACTIVE) {
 				result = false;
 			}
-			CloseHandle(phd);
 		}
 	}
 	else {
@@ -250,6 +312,7 @@ bool ProcessManage::IsPidExistedInSystem(ULONG pid) {
 			result = false;
 		}
 	}
+	CloseHandle(phd);
 	return result;
 }
 
@@ -291,6 +354,96 @@ void ProcessManage::RefreshProcessList() {
 	m_processList.clear();
 	InitProcessList();
 	InitProcessPath();
+	InitProcessParrentName();
+	// InitProcessPeb();
+	InitProcessCritical();
+	InitProcessPpl();
 	DetectHiddenProcessByPid(m_processList);
 	ListNtPathToDos();
+}
+
+bool ProcessManage::IsCritical(ULONG pid) {
+	bool ret = false;
+	HANDLE hProcess = api.ZwOpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
+	ULONG critical;
+	NTSTATUS status = api.ZwQueryInformationProcess(hProcess, ProcessBreakOnTermination, &critical, sizeof(critical), nullptr);
+	if (!NT_SUCCESS(status)) {
+		std::cerr << "ProcessManage::IsCritical error" << std::endl;
+		return ret;
+	}
+	if (critical) {
+		ret = true;
+	}
+	CloseHandle(hProcess);
+	return ret;
+}
+
+void ProcessManage::InitProcessCritical() {
+	for (int i = 0; i < m_processList.size(); i++) {
+		if (m_processList[i].m_processName == L"Registry" && m_processList[i].m_pid <= 200) {
+			continue;
+		}
+
+		if (m_processList[i].m_processName == L"Memory Compression") {
+			continue;
+		}
+
+		bool critical = IsCritical(m_processList[i].m_pid);
+		m_processList[i].m_isCritical = critical;
+	}
+	return;
+}
+
+std::wstring ProcessManage::GetProcessParrentName(ULONG pid) {
+	std::wstring parrentProcessName = DosPathGetFileName(PidToDosPath(pid));
+	return parrentProcessName;
+}
+
+void ProcessManage::InitProcessParrentName() {
+	for (int i = 0; i < m_processList.size(); i++) {
+
+
+		std::wstring parrentProcessName;
+		if (m_processList[i].m_parrentProcessId == 4) {
+			parrentProcessName = L"System";
+		} else {
+			parrentProcessName = GetProcessParrentName(m_processList[i].m_parrentProcessId);
+		}
+
+		if (parrentProcessName == L"") {
+			parrentProcessName = L"(进程已销毁)";
+		}
+		m_processList[i].m_parrentProcessName = parrentProcessName;
+	}
+	return;
+}
+
+typedef struct _PS_PROTECTION {
+	union {
+		UCHAR Level;
+		struct {
+			UCHAR Type : 3;
+			UCHAR Audit : 1;                  // Reserved
+			UCHAR Signer : 4;
+		};
+	};
+} PS_PROTECTION, * PPS_PROTECTION;
+
+BYTE ProcessManage::GetProcessPpl(ULONG pid) {
+	HANDLE hProcess = api.ZwOpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
+	BYTE pplInfo{};
+	NTSTATUS status = api.ZwQueryInformationProcess(hProcess, static_cast<PROCESSINFOCLASS>(61), &pplInfo, sizeof(pplInfo), nullptr);
+	if (!NT_SUCCESS(status)) {
+		std::cerr << "ProcessManage::GetProcessPpl error" << std::endl;
+	}
+	CloseHandle(hProcess);
+	return pplInfo;
+}
+
+void ProcessManage::InitProcessPpl() {
+	for (int i = 0; i < m_processList.size(); i++) {
+		BYTE ppl = GetProcessPpl(m_processList[i].m_pid);
+		m_processList[i].m_ppl = ppl;
+	}
+	return;
 }

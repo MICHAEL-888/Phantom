@@ -52,7 +52,64 @@ int GetDPI() {
 	}
 }
 
+static int CALLBACK CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
+{
+	int column = LOWORD(lParamSort);    // 列号
+	bool ascending = HIWORD(lParamSort); // 排序方向
+
+	HWND hList = GetDlgItem(GetActiveWindow(), LISTVIEW_ID_1);
+	WCHAR szText1[256]{};
+	WCHAR szText2[256]{};
+
+	// 获取要比较的两个项的文本
+	int index1 = -1, index2 = -1;
+
+	// 找到对应PID的项的索引
+	for (int i = 0; i < ListView_GetItemCount(hList); i++) {
+		LVITEM lvi{};
+		lvi.mask = LVIF_PARAM;
+		lvi.iItem = i;
+		ListView_GetItem(hList, &lvi);
+		if (lvi.lParam == lParam1) index1 = i;
+		if (lvi.lParam == lParam2) index2 = i;
+		if (index1 != -1 && index2 != -1) break;
+	}
+
+	if (index1 == -1 || index2 == -1) return 0;
+
+	// 获取文本进行比较
+	ListView_GetItemText(hList, index1, column, szText1, _countof(szText1));
+	ListView_GetItemText(hList, index2, column, szText2, _countof(szText2));
+
+	ULONG result;
+	// 根据不同列使用不同的比较方法
+	switch (column)
+	{
+	case 1: // PID列 - 直接比较lParam
+		result = (ULONG)(lParam1 - lParam2);
+		break;
+	case 4: // 父进程ID列 - 数字比较
+	{
+		ULONG num1 = _wtoi(szText1);
+		ULONG num2 = _wtoi(szText2);
+		result = num1 - num2;
+		break;
+	}
+	default: // 其他列 - 字符串比较
+		result = _wcsicmp(szText1, szText2);
+	}
+
+	return ascending ? result : -result;
+}
+
+
+
+
+
 void FillProcessListView(HWND hwndListView, const ProcessManage& processManager) {
+	// 禁用重绘
+	SendMessage(hwndListView, WM_SETREDRAW, FALSE, 0);
+
 	// 清空列表视图
 	ListView_DeleteAllItems(hwndListView);
 
@@ -83,11 +140,48 @@ void FillProcessListView(HWND hwndListView, const ProcessManage& processManager)
 		ListView_SetItemText(hwndListView, index, 2, const_cast<LPWSTR>(processList[i].m_processPath.c_str()));
 
 		// 设置第四列（隐藏进程检测）
-		std::wstring isHideStr = processList[i].m_isHide ? L"true" : L"false";
+		std::wstring isHideStr = processList[i].m_isHide ? L"true" : L"";
 		ListView_SetItemText(hwndListView, index, 3, const_cast<LPWSTR>(isHideStr.c_str()));
 
+		// 设置第五列（父进程ID）
+		std::wstring parrentPidStr = std::to_wstring(processList[i].m_parrentProcessId);
+		ListView_SetItemText(hwndListView, index, 4, const_cast<LPWSTR>(parrentPidStr.c_str()));
+
+		// 设置第六列（父进程名）
+		ListView_SetItemText(hwndListView, index, 5, const_cast<LPWSTR>(processList[i].m_parrentProcessName.c_str()));
+
+		// 设置第七列（关键进程）
+		std::wstring isCriticalStr = processList[i].m_isCritical ? L"true" : L"";
+		ListView_SetItemText(hwndListView, index, 6, const_cast<LPWSTR>(isCriticalStr.c_str()));
+
+		// 设置第八列（PPL）
+		if ((processList[i].m_ppl & 0b00000111) != 0) {
+			std::wstring type{};
+			std::wstring signer{};
+
+			if ((processList[i].m_ppl & 0b00000111) == 1)	type = L"Light";
+			else if ((processList[i].m_ppl & 0b00000111) == 2)	type = L"Full";
+
+			if ((processList[i].m_ppl & 0b11110000) == 0) signer = L"(None)";
+			if ((processList[i].m_ppl & 0b11110000) == 16) signer = L"(Authenticode)";
+			if ((processList[i].m_ppl & 0b11110000) == 32) signer = L"(CodeGen)";
+			if ((processList[i].m_ppl & 0b11110000) == 48) signer = L"(Antimalware)";
+			if ((processList[i].m_ppl & 0b11110000) == 64) signer = L"(Lsa)";
+			if ((processList[i].m_ppl & 0b11110000) == 80) signer = L"(Windows)";
+			if ((processList[i].m_ppl & 0b11110000) == 96) signer = L"(WinTcb)";
+			if ((processList[i].m_ppl & 0b11110000) == 112) signer = L"(WinSystem)";
+			if ((processList[i].m_ppl & 0b11110000) == 128) signer = L"(App)";
+			if ((processList[i].m_ppl & 0b11110000) == 144) signer = L"(Max)";
+
+			std::wstring tmp = type + L" " + signer;
+			ListView_SetItemText(hwndListView, index, 7, const_cast<LPWSTR>(tmp.c_str()));
+		}
+		
 
 	}
+
+	// 开启重绘
+	SendMessage(hwndListView, WM_SETREDRAW, TRUE, 0);
 
 	// 强制重绘列表视图和表头
 	InvalidateRect(hwndListView, NULL, TRUE);
@@ -236,7 +330,7 @@ LRESULT CALLBACK MainWndProc(
 
 		lvColumn.cx = 600;
 		lvColumn.fmt = LVCFMT_LEFT;
-		lvColumn.pszText = L"进程路径";
+		lvColumn.pszText = L"映像路径";
 		ListView_InsertColumn(hwndListView, 2, &lvColumn);
 
 		lvColumn.cx = 180;
@@ -244,6 +338,26 @@ LRESULT CALLBACK MainWndProc(
 		lvColumn.pszText = L"隐藏进程检测";
 		ListView_InsertColumn(hwndListView, 3, &lvColumn);
 
+		lvColumn.cx = 150;
+		lvColumn.fmt = LVCFMT_LEFT;
+		lvColumn.pszText = L"父进程ID";
+		ListView_InsertColumn(hwndListView, 4, &lvColumn);
+
+		lvColumn.cx = 300;
+		lvColumn.fmt = LVCFMT_LEFT;
+		lvColumn.pszText = L"父进程名";
+		ListView_InsertColumn(hwndListView, 5, &lvColumn);
+
+		lvColumn.cx = 180;
+		lvColumn.fmt = LVCFMT_CENTER;  // 设置居中对齐
+		lvColumn.pszText = L"系统关键进程";
+		ListView_InsertColumn(hwndListView, 6, &lvColumn);
+
+		lvColumn.cx = 300;
+		lvColumn.fmt = LVCFMT_LEFT;
+		lvColumn.pszText = L"进程保护";
+		ListView_InsertColumn(hwndListView, 7, &lvColumn);
+		
 		FillProcessListView(hwndListView, processManage);
 
 		hwndElevateButton = CreateWindowEx(
@@ -253,8 +367,8 @@ LRESULT CALLBACK MainWndProc(
 			WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
 			rcTabClient.right - 100,  // x位置
 			rcTabClient.bottom - 4 - 10,  // y位置
-			200,  // 宽度
-			40,   // 高度
+			200 * GetDPI() / 100,  // 宽度
+			40 * GetDPI() / 100,   // 高度
 			hwnd,
 			(HMENU)BUTTON_ID_1,
 			GetModuleHandle(NULL),
@@ -329,6 +443,24 @@ LRESULT CALLBACK MainWndProc(
 		return 0;
 
 	case WM_NOTIFY:
+		if (((LPNMHDR)lParam)->hwndFrom == ListView_GetHeader(hwndListView))
+		{
+			if (((LPNMHDR)lParam)->code == HDN_ITEMCLICK)
+			{
+				LPNMHEADER phdr = (LPNMHEADER)lParam;
+				// 获取点击的列索引
+				int column = phdr->iItem;
+				static bool ascending = true;  // 排序方向
+
+				SendMessage(hwndListView, WM_SETREDRAW, FALSE, 0);
+				// 对列表项进行排序
+				ListView_SortItems(hwndListView, CompareFunc, MAKELPARAM(column, ascending));
+				ascending = !ascending;  // 切换排序方向
+				SendMessage(hwndListView, WM_SETREDRAW, TRUE, 0);
+
+				return 0;
+			}
+		}
 
 		if (((LPNMHDR)lParam)->idFrom == TABCONTROL_ID_1 && ((LPNMHDR)lParam)->code == TCN_SELCHANGE)
 		{
