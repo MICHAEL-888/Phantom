@@ -19,43 +19,40 @@ void ProcessManage::InitProcessList() {
 	// 缓冲区中;否则，它将返回 NTSTATUS 错误代码，并在 ReturnLength 中
 	// 返回接收请求的信息所需的缓冲区大小。
 
-	ULONG m_BufferSize = 0;
-	PVOID m_Buffer = nullptr;
+	ULONG bufferSize{};
 
 	// 传入空指针获取缓冲区大小
 	NTSTATUS status = api.ZwQuerySystemInformation(SystemProcessInformation,
-		nullptr, 0, &m_BufferSize);
+		nullptr, 0, &bufferSize);
 
-	if (m_BufferSize == 0) {
+	if (bufferSize == 0) {
 		std::cerr << "ProcessManage::InitProcessList \"Failed to get buffer size\""
 			<< std::endl;
 		return;
 	}
 
 	// 分配内存
-	m_BufferSize *= 2;
-	m_Buffer = malloc(m_BufferSize);
-	if (!m_Buffer) {
+	bufferSize *= 2;
+	auto buffer = std::make_unique<BYTE[]>(bufferSize);
+	if (!buffer) {
 		std::cerr << "ProcessManage::InitProcessList \"Failed to allocate memory\""
 			<< std::endl;
 		return;
 	}
 
 	// 获取进程信息
-	status = api.ZwQuerySystemInformation(SystemProcessInformation, m_Buffer,
-		m_BufferSize, nullptr);
+	status = api.ZwQuerySystemInformation(SystemProcessInformation, buffer.get(),
+		bufferSize, nullptr);
 
 	if (!NT_SUCCESS(status)) {
 		std::cerr << "ProcessManage::InitProcessList \"Failed to query system "
 			"information\""
 			<< std::endl;
-		free(m_Buffer);
-		m_Buffer = nullptr;
 		return;
 	}
 
 	PSYSTEM_PROCESS_INFORMATION processInfo =
-		(PSYSTEM_PROCESS_INFORMATION)m_Buffer;
+		(PSYSTEM_PROCESS_INFORMATION)buffer.get();
 
 	// 遍历进程信息
 
@@ -81,11 +78,6 @@ void ProcessManage::InitProcessList() {
 		processInfo = (PSYSTEM_PROCESS_INFORMATION)((LPBYTE)processInfo +
 			processInfo->NextEntryOffset);
 	}
-
-	if (m_Buffer) {
-		free(m_Buffer);
-		m_Buffer = nullptr;
-	}
 }
 
 void ProcessManage::InitProcessPath() {
@@ -99,8 +91,7 @@ void ProcessManage::InitProcessPath() {
 			continue;
 		}
 
-		ULONG m_BufferSize = 0;
-		PVOID m_Buffer = nullptr;
+		ULONG bufferSize{};
 
 		HANDLE hProcess;
 		OBJECT_ATTRIBUTES ObjectAttributes;
@@ -118,19 +109,19 @@ void ProcessManage::InitProcessPath() {
 		}
 
 		status = api.ZwQueryInformationProcess(hProcess, ProcessImageFileName,
-			nullptr, 0, &m_BufferSize);
+			nullptr, 0, &bufferSize);
 
-		if (m_BufferSize == 0) {
+		if (bufferSize == 0) {
 			std::cerr
 				<< "ProcessManage::InitProcessPath \"Failed to get buffer size\""
 				<< std::endl;
 			continue;
 		}
 
-		m_BufferSize *= 2;
-		m_Buffer = malloc(m_BufferSize);
-		//memset(&m_Buffer, 0, m_BufferSize);
-		if (!m_Buffer) {
+		bufferSize *= 2;
+		auto buffer = std::make_unique<BYTE[]>(bufferSize);
+		//memset(&buffer, 0, bufferSize);
+		if (!buffer) {
 			std::cerr
 				<< "ProcessManage::InitProcessPath \"Failed to allocate memory\""
 				<< std::endl;
@@ -138,22 +129,20 @@ void ProcessManage::InitProcessPath() {
 		}
 
 		status = api.ZwQueryInformationProcess(hProcess, ProcessImageFileName,
-			m_Buffer, m_BufferSize, nullptr);
+			buffer.get(), bufferSize, nullptr);
 
 		if (!NT_SUCCESS(status)) {
 			std::cerr << "ProcessManage::InitProcessPath \"Failed to query process "
 				"information\""
 				<< std::endl;
-			free(m_Buffer);
-			m_Buffer = nullptr;
+			buffer = nullptr;
 			continue;
 		}
 
-		UNICODE_STRING newProcessInfo = *(PUNICODE_STRING)m_Buffer;
+		UNICODE_STRING newProcessInfo = *reinterpret_cast<PUNICODE_STRING>(buffer.get());
 		if (newProcessInfo.Buffer) {
 			m_processList[i].m_processPath = newProcessInfo.Buffer;
 		}
-		free(m_Buffer);
 		CloseHandle(hProcess);
 	}
 
@@ -170,8 +159,8 @@ void ProcessManage::InitProcessPeb() {
 			continue;
 		}
 
-		ULONG m_BufferSize = 0;
-		PROCESS_BASIC_INFORMATION m_Buffer = {0};
+		ULONG bufferSize{};
+		PROCESS_BASIC_INFORMATION buffer = {0};
 
 		HANDLE hProcess;
 		OBJECT_ATTRIBUTES ObjectAttributes;
@@ -188,11 +177,11 @@ void ProcessManage::InitProcessPeb() {
 			continue;
 		}
 
-		m_BufferSize = sizeof(m_Buffer);
-		//memset(&m_Buffer, 0, m_BufferSize);
+		bufferSize = sizeof(buffer);
+		//memset(&buffer, 0, bufferSize);
 
 		status = api.ZwQueryInformationProcess(hProcess, ProcessBasicInformation,
-			&m_Buffer, m_BufferSize, nullptr);
+			&buffer, bufferSize, nullptr);
 		if (!NT_SUCCESS(status)) {
 			std::cerr << "ProcessManage::InitProcessPeb \"Failed to query process "
 				"information\""
@@ -201,7 +190,7 @@ void ProcessManage::InitProcessPeb() {
 		}
 
 
-		PROCESS_BASIC_INFORMATION newProcessInfo = m_Buffer;
+		PROCESS_BASIC_INFORMATION newProcessInfo = buffer;
 		if (newProcessInfo.PebBaseAddress) {
 			m_processList[i].m_peb = newProcessInfo.PebBaseAddress;
 		}
@@ -246,8 +235,7 @@ void ProcessManage::ListNtPathToDos() {
 }
 
 std::wstring ProcessManage::PidToDosPath(const ULONG pid) {
-	ULONG m_BufferSize = 0;
-	PVOID m_Buffer = nullptr;
+	ULONG bufferSize{};
 
 	HANDLE hProcess;
 	OBJECT_ATTRIBUTES ObjectAttributes;
@@ -260,29 +248,30 @@ std::wstring ProcessManage::PidToDosPath(const ULONG pid) {
 		std::cerr << "ProcessManage::PidToDosPath \"Failed to open process\"" << std::endl;
 		return L"";
 	}
-	status = api.ZwQueryInformationProcess(hProcess, ProcessImageFileName, nullptr, 0, &m_BufferSize);
+	status = api.ZwQueryInformationProcess(hProcess, ProcessImageFileName, nullptr, 0, &bufferSize);
 
-	if (m_BufferSize == 0) {
+	if (bufferSize == 0) {
 		std::cerr << "ProcessManage::PidToDosPath \"Failed to get buffer size\"" << std::endl;
+		CloseHandle(hProcess);
 		return L"";
 	}
 
-	m_Buffer = malloc(m_BufferSize);
-	if (!m_Buffer) {
+	auto buffer = std::make_unique<BYTE[]>(bufferSize);
+	if (!buffer) {
 		std::cerr << "ProcessManage::PidToDosPath \"Failed to allocate memory\"" << std::endl;
+		CloseHandle(hProcess);
 		return L"";
 	}
 
-	status = api.ZwQueryInformationProcess(hProcess, ProcessImageFileName, m_Buffer, m_BufferSize, nullptr);
+	status = api.ZwQueryInformationProcess(hProcess, ProcessImageFileName, buffer.get(), bufferSize, nullptr);
 
 	if (!NT_SUCCESS(status)) {
 		std::cerr << "ProcessManage::PidToDosPath \"Failed to query process information\"" << std::endl;
-		free(m_Buffer);
-		m_Buffer = nullptr;
+		CloseHandle(hProcess);
 		return L"";
 	}
 
-	UNICODE_STRING newProcessInfo = *(PUNICODE_STRING)m_Buffer;
+	UNICODE_STRING newProcessInfo = *reinterpret_cast<PUNICODE_STRING>(buffer.get());
 	if (newProcessInfo.Buffer) {
 		CloseHandle(hProcess);
 		return newProcessInfo.Buffer;
@@ -295,13 +284,13 @@ std::wstring ProcessManage::PidToDosPath(const ULONG pid) {
 
 bool ProcessManage::IsPidExistedInSystem(ULONG pid) {
 	bool result = true;
-	HANDLE phd = api.ZwOpenProcess(SYNCHRONIZE, FALSE, pid);
-	if (phd) {
-		if (WaitForSingleObject(phd, 0) == WAIT_OBJECT_0) { // signal
+	HANDLE hProcess = api.ZwOpenProcess(SYNCHRONIZE, FALSE, pid);
+	if (hProcess) {
+		if (WaitForSingleObject(hProcess, 0) == WAIT_OBJECT_0) { // signal
 			result = false;
 		}
 		DWORD exitCode;
-		if (GetExitCodeProcess(phd, &exitCode)) {
+		if (GetExitCodeProcess(hProcess, &exitCode)) {
 			if (exitCode != STILL_ACTIVE) {
 				result = false;
 			}
@@ -312,7 +301,7 @@ bool ProcessManage::IsPidExistedInSystem(ULONG pid) {
 			result = false;
 		}
 	}
-	CloseHandle(phd);
+	CloseHandle(hProcess);
 	return result;
 }
 
@@ -368,13 +357,14 @@ void ProcessManage::RefreshProcessList() {
 bool ProcessManage::IsCritical(ULONG pid) {
 	bool ret = false;
 	HANDLE hProcess = api.ZwOpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
-	ULONG critical;
-	NTSTATUS status = api.ZwQueryInformationProcess(hProcess, ProcessBreakOnTermination, &critical, sizeof(critical), nullptr);
+	ULONG isCritical;
+	NTSTATUS status = api.ZwQueryInformationProcess(hProcess, ProcessBreakOnTermination, &isCritical, sizeof(isCritical), nullptr);
 	if (!NT_SUCCESS(status)) {
+		CloseHandle(hProcess);
 		std::cerr << "ProcessManage::IsCritical error" << std::endl;
 		return ret;
 	}
-	if (critical) {
+	if (isCritical) {
 		ret = true;
 	}
 	CloseHandle(hProcess);
@@ -391,8 +381,8 @@ void ProcessManage::InitProcessCritical() {
 			continue;
 		}
 
-		bool critical = IsCritical(m_processList[i].m_pid);
-		m_processList[i].m_isCritical = critical;
+		bool isCritical = IsCritical(m_processList[i].m_pid);
+		m_processList[i].m_isCritical = isCritical;
 	}
 	return;
 }
@@ -420,17 +410,6 @@ void ProcessManage::InitProcessParrentName() {
 	}
 	return;
 }
-
-typedef struct _PS_PROTECTION {
-	union {
-		UCHAR Level;
-		struct {
-			UCHAR Type : 3;
-			UCHAR Audit : 1;                  // Reserved
-			UCHAR Signer : 4;
-		};
-	};
-} PS_PROTECTION, * PPS_PROTECTION;
 
 BYTE ProcessManage::GetProcessPpl(ULONG pid) {
 	HANDLE hProcess = api.ZwOpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
@@ -475,14 +454,13 @@ std::wstring ProcessManage::GetProcessSid(ULONG pid) {
 		return L"";
 	}
 
-	// auto m_buffer = std::make_unique<BYTE[]>(dwSize);
-	LPVOID m_buffer = malloc(dwSize);
-	GetTokenInformation(hToken, TokenUser, m_buffer, dwSize, &dwSize);
+	auto buffer = std::make_unique<BYTE[]>(dwSize);
+	GetTokenInformation(hToken, TokenUser, buffer.get(), dwSize, &dwSize);
 
-	PTOKEN_USER pTokenUser = reinterpret_cast<PTOKEN_USER>(m_buffer);
+	PTOKEN_USER pTokenUser = reinterpret_cast<PTOKEN_USER>(buffer.get());
 	PSID pSid = pTokenUser->User.Sid;
 
-	LPWSTR stringSid = nullptr;
+	LPWSTR stringSid{};
 	ConvertSidToStringSidW(pSid, &stringSid);
 	CloseHandle(hToken);
 	CloseHandle(hProcess);
@@ -493,7 +471,6 @@ std::wstring ProcessManage::GetProcessSid(ULONG pid) {
 	}
 
 	std::wstring sid(stringSid);
-	free(m_buffer);
 	LocalFree(stringSid);
 
 	return sid;
