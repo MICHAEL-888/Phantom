@@ -358,6 +358,9 @@ void ProcessManage::RefreshProcessList() {
 	// InitProcessPeb();
 	InitProcessCritical();
 	InitProcessPpl();
+	InitProcessSid();
+	InitProcessUserName();
+	InitProcessUserDomain();
 	DetectHiddenProcessByPid(m_processList);
 	ListNtPathToDos();
 }
@@ -444,6 +447,155 @@ void ProcessManage::InitProcessPpl() {
 	for (int i = 0; i < m_processList.size(); i++) {
 		BYTE ppl = GetProcessPpl(m_processList[i].m_pid);
 		m_processList[i].m_ppl = ppl;
+	}
+	return;
+}
+
+std::wstring ProcessManage::GetProcessSid(ULONG pid) {
+	HANDLE hProcess = api.ZwOpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
+	if (!hProcess) {
+		std::cerr << "ProcessManage::GetProcessSid error" << std::endl;
+		return L"";
+	}
+
+	HANDLE hToken{};
+	NTSTATUS status = api.ZwOpenProcessToken(hProcess, TOKEN_QUERY, &hToken);
+	if (!NT_SUCCESS(status)) {
+		std::cerr << "ProcessManage::GetProcessSid error" << std::endl;
+		CloseHandle(hProcess);
+		return L"";
+	}
+
+	DWORD dwSize = 0;
+	GetTokenInformation(hToken, TokenUser, nullptr, 0, &dwSize);
+	if (!dwSize) {
+		std::cerr << "ProcessManage::GetProcessSid error" << std::endl;
+		CloseHandle(hToken);
+		CloseHandle(hProcess);
+		return L"";
+	}
+
+	// auto m_buffer = std::make_unique<BYTE[]>(dwSize);
+	LPVOID m_buffer = malloc(dwSize);
+	GetTokenInformation(hToken, TokenUser, m_buffer, dwSize, &dwSize);
+
+	PTOKEN_USER pTokenUser = reinterpret_cast<PTOKEN_USER>(m_buffer);
+	PSID pSid = pTokenUser->User.Sid;
+
+	LPWSTR stringSid = nullptr;
+	ConvertSidToStringSidW(pSid, &stringSid);
+	CloseHandle(hToken);
+	CloseHandle(hProcess);
+
+	if (!stringSid) {
+		std::cerr << "ProcessManage::GetProcessSid error" << std::endl;
+		return L"";
+	}
+
+	std::wstring sid(stringSid);
+	free(m_buffer);
+	LocalFree(stringSid);
+
+	return sid;
+
+}
+
+void ProcessManage::InitProcessSid() {
+	for (int i = 0; i < m_processList.size(); i++) {
+		std::wstring sid = GetProcessSid(m_processList[i].m_pid);
+		m_processList[i].m_sid = sid;
+	}
+	return;
+}
+
+std::wstring ProcessManage::GetSidUserName(std::wstring stringSid) {
+	PVOID sid = nullptr;
+	ConvertStringSidToSidW(stringSid.c_str(), &sid);
+
+	DWORD bufferSize = 0;
+	DWORD bufferSize2 = 0;
+	SID_NAME_USE peUse{};
+	LookupAccountSidW(nullptr, sid, nullptr, &bufferSize, nullptr, &bufferSize2, &peUse);
+
+	if (!bufferSize) {
+		std::cerr << "ProcessManage::GetSidUserName error" << std::endl;
+		return L"";
+	}
+
+	// LPWSTR userName = (LPWSTR)malloc(bufferSize);
+	auto userName = std::make_unique<WCHAR[]>(bufferSize);
+	auto userDomain = std::make_unique<WCHAR[]>(bufferSize2);
+
+
+	BOOL ret = LookupAccountSidW(nullptr, sid, userName.get(), &bufferSize, userDomain.get(), &bufferSize2, &peUse);
+	if (!ret) {
+		std::cerr << "ProcessManage::GetSidUserName error" << std::endl;
+		return L"";
+	}
+
+	return userName.get();
+}
+
+std::wstring ProcessManage::GetSidDomain(std::wstring stringSid) {
+	PVOID sid = nullptr;
+	ConvertStringSidToSidW(stringSid.c_str(), &sid);
+
+	DWORD bufferSize = 0;
+	DWORD bufferSize2 = 0;
+	SID_NAME_USE peUse{};
+	LookupAccountSidW(nullptr, sid, nullptr, &bufferSize, nullptr, &bufferSize2, &peUse);
+
+	if (!bufferSize) {
+		std::cerr << "ProcessManage::GetSidUserName error" << std::endl;
+		return L"";
+	}
+
+	// LPWSTR userName = (LPWSTR)malloc(bufferSize);
+	auto userName = std::make_unique<WCHAR[]>(bufferSize);
+	auto userDomain = std::make_unique<WCHAR[]>(bufferSize2);
+
+
+	BOOL ret = LookupAccountSidW(nullptr, sid, userName.get(), &bufferSize, userDomain.get(), &bufferSize2, &peUse);
+	if (!ret) {
+		std::cerr << "ProcessManage::GetSidUserName error" << std::endl;
+		return L"";
+	}
+
+	return userDomain.get();
+}
+
+void ProcessManage::InitProcessUserName() {
+	for (int i = 0; i < m_processList.size(); i++) {
+		if (m_processList[i].m_processName == L"系统空闲进程" && m_processList[i].m_pid == 0) {
+			m_processList[i].m_userName = L"SYSTEM";
+		}
+
+		if (m_processList[i].m_processName == L"System" && m_processList[i].m_pid == 4) {
+			m_processList[i].m_userName = L"SYSTEM";
+		}
+
+		if (!m_processList[i].m_sid.empty()) {
+			std::wstring userName = GetSidUserName(m_processList[i].m_sid);
+			m_processList[i].m_userName = userName;
+		}
+	}
+	return;
+}
+
+void ProcessManage::InitProcessUserDomain() {
+	for (int i = 0; i < m_processList.size(); i++) {
+		if (m_processList[i].m_processName == L"系统空闲进程" && m_processList[i].m_pid == 0) {
+			m_processList[i].m_userDomain = L"NT AUTHORITY";
+		}
+
+		if (m_processList[i].m_processName == L"System" && m_processList[i].m_pid == 4) {
+			m_processList[i].m_userDomain = L"NT AUTHORITY";
+		}
+
+		if (!m_processList[i].m_sid.empty()) {
+			std::wstring userDomain = GetSidDomain(m_processList[i].m_sid);
+			m_processList[i].m_userDomain = userDomain;
+		}
 	}
 	return;
 }

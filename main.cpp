@@ -176,6 +176,10 @@ void FillProcessListView(HWND hwndListView, const ProcessManage& processManager)
 			std::wstring tmp = type + L" " + signer;
 			ListView_SetItemText(hwndListView, index, 7, const_cast<LPWSTR>(tmp.c_str()));
 		}
+
+		// 设置第九列（用户名）
+		std::wstring str9 = processList[i].m_userDomain + L"\\" + processList[i].m_userName;
+		ListView_SetItemText(hwndListView, index, 8, const_cast<LPWSTR>(str9.c_str()));
 		
 
 	}
@@ -357,6 +361,11 @@ LRESULT CALLBACK MainWndProc(
 		lvColumn.fmt = LVCFMT_LEFT;
 		lvColumn.pszText = L"进程保护";
 		ListView_InsertColumn(hwndListView, 7, &lvColumn);
+
+		lvColumn.cx = 350;
+		lvColumn.fmt = LVCFMT_LEFT;
+		lvColumn.pszText = L"用户名";
+		ListView_InsertColumn(hwndListView, 8, &lvColumn);
 		
 		FillProcessListView(hwndListView, processManage);
 
