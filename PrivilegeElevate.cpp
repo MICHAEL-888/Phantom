@@ -23,25 +23,23 @@ bool PrivilegeElevate::AdmintoSystem() {
 	AdjustTokenPrivileges(hCurrentToken, FALSE, &PrivToken,
 		sizeof(TOKEN_PRIVILEGES), NULL, NULL);
 
-	ULONG bufferSize;
-	PVOID buffer;
+	ULONG bufferSize{};
 	NTSTATUS status = api.ZwQuerySystemInformation(SystemProcessInformation,
 		nullptr, 0, &bufferSize);
 	if (!NT_SUCCESS(status)) {
 		ret = false;
 	}
 
-	buffer = malloc(bufferSize * 2);
+	auto buffer = std::make_unique<BYTE[]>(bufferSize * 2);
 
-	status = api.ZwQuerySystemInformation(SystemProcessInformation, buffer,
+	status = api.ZwQuerySystemInformation(SystemProcessInformation, buffer.get(),
 		bufferSize * 2, nullptr);
 	if (!NT_SUCCESS(status)) {
 		ret = false;
 	}
 
 	PSYSTEM_PROCESS_INFORMATION sysInfo =
-		reinterpret_cast<PSYSTEM_PROCESS_INFORMATION>(buffer);
-	// free(buffer);
+		reinterpret_cast<PSYSTEM_PROCESS_INFORMATION>(buffer.get());
 
 	std::wstring processName;
 	ULONG processPid;
@@ -103,7 +101,6 @@ bool PrivilegeElevate::AdmintoSystem() {
 	CloseHandle(hDpToken);
 	CloseHandle(hToken);
 	CloseHandle(hProcess);
-	free(buffer);
 	CloseHandle(hCurrentToken);
 
 	return ret;

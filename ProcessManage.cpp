@@ -486,16 +486,17 @@ void ProcessManage::InitProcessSid() {
 }
 
 std::wstring ProcessManage::GetSidUserName(std::wstring stringSid) {
-	PVOID sid = nullptr;
+	PVOID sid{};
 	ConvertStringSidToSidW(stringSid.c_str(), &sid);
 
-	DWORD bufferSize = 0;
-	DWORD bufferSize2 = 0;
+	DWORD bufferSize{};
+	DWORD bufferSize2{};
 	SID_NAME_USE peUse{};
 	LookupAccountSidW(nullptr, sid, nullptr, &bufferSize, nullptr, &bufferSize2, &peUse);
 
 	if (!bufferSize) {
 		std::cerr << "ProcessManage::GetSidUserName error" << std::endl;
+		LocalFree(sid);
 		return L"";
 	}
 
@@ -504,17 +505,20 @@ std::wstring ProcessManage::GetSidUserName(std::wstring stringSid) {
 	auto userDomain = std::make_unique<WCHAR[]>(bufferSize2);
 
 
-	BOOL ret = LookupAccountSidW(nullptr, sid, userName.get(), &bufferSize, userDomain.get(), &bufferSize2, &peUse);
+	BOOL ret = LookupAccountSidW(nullptr, sid, reinterpret_cast<LPWSTR>(userName.get()), 
+		&bufferSize,reinterpret_cast<LPWSTR>(userDomain.get()), &bufferSize2, &peUse);
 	if (!ret) {
 		std::cerr << "ProcessManage::GetSidUserName error" << std::endl;
+		LocalFree(sid);
 		return L"";
 	}
 
-	return userName.get();
+	LocalFree(sid);
+	return reinterpret_cast<LPWSTR>(userName.get());
 }
 
 std::wstring ProcessManage::GetSidDomain(std::wstring stringSid) {
-	PVOID sid = nullptr;
+	PVOID sid{};
 	ConvertStringSidToSidW(stringSid.c_str(), &sid);
 
 	DWORD bufferSize = 0;
@@ -524,6 +528,7 @@ std::wstring ProcessManage::GetSidDomain(std::wstring stringSid) {
 
 	if (!bufferSize) {
 		std::cerr << "ProcessManage::GetSidUserName error" << std::endl;
+		LocalFree(sid);
 		return L"";
 	}
 
@@ -535,9 +540,11 @@ std::wstring ProcessManage::GetSidDomain(std::wstring stringSid) {
 	BOOL ret = LookupAccountSidW(nullptr, sid, userName.get(), &bufferSize, userDomain.get(), &bufferSize2, &peUse);
 	if (!ret) {
 		std::cerr << "ProcessManage::GetSidUserName error" << std::endl;
+		LocalFree(sid);
 		return L"";
 	}
 
+	LocalFree(sid);
 	return userDomain.get();
 }
 
