@@ -168,7 +168,7 @@ void ProcessManage::InitProcessPeb() {
 		CLIENT_ID clientID = { 0 };
 		clientID.UniqueProcess = ULongToHandle(m_processList[i].m_pid);
 		NTSTATUS status =
-			api.ZwOpenProcess(&hProcess, PROCESS_ALL_ACCESS,
+			api.ZwOpenProcess(&hProcess, PROCESS_QUERY_LIMITED_INFORMATION,
 				&ObjectAttributes, &clientID);
 
 		if (!NT_SUCCESS(status)) {
@@ -344,7 +344,7 @@ void ProcessManage::RefreshProcessList() {
 	InitProcessList();
 	InitProcessPath();
 	InitProcessParrentName();
-	// InitProcessPeb();
+	InitProcessPeb();
 	InitProcessCritical();
 	InitProcessPpl();
 	InitProcessSid();

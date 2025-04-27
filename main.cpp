@@ -5,6 +5,7 @@
 #include <commctrl.h>
 #include <string>
 #include <sstream>
+#include <iomanip>
 #include "ProcessManage.h"
 #include "PrivilegeElevate.h"
 
@@ -17,8 +18,11 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #define LISTVIEW_ID_1 3000
 #define BUTTON_ID_1 4000
 #define ID_MENU_REFRESH    5001
-#define ID_MENU_TERMINATE  5002
+#define ID_MENU_TERMINATE_PROCESS  5002
 #define ID_MENU_PROPERTY   5003
+#define ID_MENU_TERMINATE_PROCESSTREE 5004
+#define ID_MENU_VIEW_PROCESS_MODULES 5005
+
 
 
 //int main() {
@@ -178,8 +182,20 @@ void FillProcessListView(HWND hwndListView, const ProcessManage& processManager)
 		}
 
 		// 设置第九列（用户名）
-		std::wstring str9 = processList[i].m_userDomain + L"\\" + processList[i].m_userName;
-		ListView_SetItemText(hwndListView, index, 8, const_cast<LPWSTR>(str9.c_str()));
+		if (!processList[i].m_userDomain.empty() && !processList[i].m_userName.empty()) {
+			std::wstring str9 = processList[i].m_userDomain + L"\\" + processList[i].m_userName;
+			ListView_SetItemText(hwndListView, index, 8, const_cast<LPWSTR>(str9.c_str()));
+		}
+		
+		// 设置第十列（PEB基址）
+		if (processList[i].m_peb != nullptr) {
+			std::wstringstream wss10;
+			wss10 << L"0x" << std::uppercase << std::hex 
+				<< reinterpret_cast<uintptr_t>(processList[i].m_peb);
+			std::wstring str10 = wss10.str();
+			ListView_SetItemText(hwndListView, index, 9, const_cast<LPWSTR>(str10.c_str()));
+		}
+		
 		
 
 	}
@@ -366,6 +382,11 @@ LRESULT CALLBACK MainWndProc(
 		lvColumn.fmt = LVCFMT_LEFT;
 		lvColumn.pszText = L"用户名";
 		ListView_InsertColumn(hwndListView, 8, &lvColumn);
+
+		lvColumn.cx = 300;
+		lvColumn.fmt = LVCFMT_LEFT;
+		lvColumn.pszText = L"PEB基址";
+		ListView_InsertColumn(hwndListView, 9, &lvColumn);
 		
 		FillProcessListView(hwndListView, processManage);
 
@@ -514,7 +535,7 @@ LRESULT CALLBACK MainWndProc(
 				+ L"    检测到隐藏进程：" + std::to_wstring(processManage.GetProcessHiddenCount());
 			SendMessage(hwndStatus, SB_SETTEXT, 0, (LPARAM)statusText.c_str());
 			break;
-		case ID_MENU_TERMINATE:
+		case ID_MENU_TERMINATE_PROCESS:
 		{
 			// 获取选中项
 			int selectedItem = ListView_GetNextItem(hwndListView, -1, LVNI_SELECTED);
@@ -604,7 +625,10 @@ LRESULT CALLBACK MainWndProc(
 					// 添加菜单项
 					AppendMenu(hPopupMenu, MF_STRING, ID_MENU_REFRESH, L"刷新");
 					AppendMenu(hPopupMenu, MF_SEPARATOR, 0, NULL);  // 分隔线
-					AppendMenu(hPopupMenu, MF_STRING, ID_MENU_TERMINATE, L"结束进程");
+					AppendMenu(hPopupMenu, MF_STRING, ID_MENU_TERMINATE_PROCESS, L"结束进程");
+					AppendMenu(hPopupMenu, MF_STRING, ID_MENU_TERMINATE_PROCESSTREE, L"结束进程树");
+					AppendMenu(hPopupMenu, MF_SEPARATOR, 0, NULL);  // 分隔线
+					AppendMenu(hPopupMenu, MF_STRING, ID_MENU_VIEW_PROCESS_MODULES, L"查看进程模块");
 					AppendMenu(hPopupMenu, MF_STRING, ID_MENU_PROPERTY, L"属性");
 					// 显示菜单
 					TrackPopupMenu(hPopupMenu,
