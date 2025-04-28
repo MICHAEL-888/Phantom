@@ -114,8 +114,8 @@ void FillProcessListView(HWND hwndListView, const ProcessManage& processManager)
 	// 禁用重绘
 	SendMessage(hwndListView, WM_SETREDRAW, FALSE, 0);
 
-	// 清空列表视图
-	ListView_DeleteAllItems(hwndListView);
+    // 清空列表视图
+    ListView_DeleteAllItems(hwndListView);
 
 	// 获取进程列表
 	const auto& processList = processManager.GetProcessList();
@@ -126,86 +126,85 @@ void FillProcessListView(HWND hwndListView, const ProcessManage& processManager)
 		LVITEM lvItem;
 		ZeroMemory(&lvItem, sizeof(lvItem));
 
-		// 设置第一列（进程名称）
-		lvItem.mask = LVIF_TEXT | LVIF_PARAM;
-		lvItem.iItem = static_cast<int>(i);
-		lvItem.iSubItem = 0;
-		lvItem.pszText = const_cast<LPWSTR>(processList[i].m_processName.c_str());
-		lvItem.lParam = processList[i].m_pid; // 存储PID，以便以后引用
+        // 设置第一列（进程名称）
+        lvItem.mask = LVIF_TEXT | LVIF_PARAM;
+        lvItem.iItem = static_cast<int>(i);
+        lvItem.iSubItem = 0;
+		std::wstring wstr1 = processList[i].getProcessName();
+		lvItem.pszText = const_cast<LPWSTR>(wstr1.c_str());
+        lvItem.lParam = processList[i].getPid(); // 存储PID，以便以后引用
 
 		// 插入列表项
 		int index = ListView_InsertItem(hwndListView, &lvItem);
 
-		// 设置第二列（进程ID）
-		std::wstring pidStr = std::to_wstring(processList[i].m_pid);
-		ListView_SetItemText(hwndListView, index, 1, const_cast<LPWSTR>(pidStr.c_str()));
+        // 设置第二列（进程ID）
+        std::wstring pidStr = std::to_wstring(processList[i].getPid());
+        ListView_SetItemText(hwndListView, index, 1, const_cast<LPWSTR>(pidStr.c_str()));
 
-		// 设置第三列（进程路径）
-		ListView_SetItemText(hwndListView, index, 2, const_cast<LPWSTR>(processList[i].m_processPath.c_str()));
+        // 设置第三列（进程路径）
+		std::wstring wstr3 = processList[i].getProcessPath();
+        ListView_SetItemText(hwndListView, index, 2, const_cast<LPWSTR>(wstr3.c_str()));
 
-		// 设置第四列（隐藏进程检测）
-		std::wstring isHideStr = processList[i].m_isHide ? L"true" : L"";
-		ListView_SetItemText(hwndListView, index, 3, const_cast<LPWSTR>(isHideStr.c_str()));
+        // 设置第四列（隐藏进程检测）
+        std::wstring isHideStr = processList[i].getIsHide() ? L"true" : L"";
+        ListView_SetItemText(hwndListView, index, 3, const_cast<LPWSTR>(isHideStr.c_str()));
 
-		// 设置第五列（父进程ID）
-		std::wstring parrentPidStr = std::to_wstring(processList[i].m_parrentProcessId);
-		ListView_SetItemText(hwndListView, index, 4, const_cast<LPWSTR>(parrentPidStr.c_str()));
+        // 设置第五列（父进程ID）
+        std::wstring parrentPidStr = std::to_wstring(processList[i].getParrentProcessId());
+        ListView_SetItemText(hwndListView, index, 4, const_cast<LPWSTR>(parrentPidStr.c_str()));
 
-		// 设置第六列（父进程名）
-		ListView_SetItemText(hwndListView, index, 5, const_cast<LPWSTR>(processList[i].m_parrentProcessName.c_str()));
+        // 设置第六列（父进程名）
+		std::wstring wstr6 = processList[i].getParrentProcessName();
+        ListView_SetItemText(hwndListView, index, 5, const_cast<LPWSTR>(wstr6.c_str()));
 
-		// 设置第七列（关键进程）
-		std::wstring isCriticalStr = processList[i].m_isCritical ? L"true" : L"";
-		ListView_SetItemText(hwndListView, index, 6, const_cast<LPWSTR>(isCriticalStr.c_str()));
+        // 设置第七列（关键进程）
+        std::wstring isCriticalStr = processList[i].getIsCritical() ? L"true" : L"";
+        ListView_SetItemText(hwndListView, index, 6, const_cast<LPWSTR>(isCriticalStr.c_str()));
 
-		// 设置第八列（PPL）
-		if ((processList[i].m_ppl & 0b00000111) != 0) {
-			std::wstring type{};
-			std::wstring signer{};
+        // 设置第八列（PPL）
+        if ((processList[i].getPpl() & 0b00000111) != 0) {
+            std::wstring type{};
+            std::wstring signer{};
 
-			if ((processList[i].m_ppl & 0b00000111) == 1)	type = L"Light";
-			else if ((processList[i].m_ppl & 0b00000111) == 2)	type = L"Full";
+            if ((processList[i].getPpl() & 0b00000111) == 1)	type = L"Light";
+            else if ((processList[i].getPpl() & 0b00000111) == 2)	type = L"Full";
 
-			if ((processList[i].m_ppl & 0b11110000) == 0) signer = L"(None)";
-			if ((processList[i].m_ppl & 0b11110000) == 16) signer = L"(Authenticode)";
-			if ((processList[i].m_ppl & 0b11110000) == 32) signer = L"(CodeGen)";
-			if ((processList[i].m_ppl & 0b11110000) == 48) signer = L"(Antimalware)";
-			if ((processList[i].m_ppl & 0b11110000) == 64) signer = L"(Lsa)";
-			if ((processList[i].m_ppl & 0b11110000) == 80) signer = L"(Windows)";
-			if ((processList[i].m_ppl & 0b11110000) == 96) signer = L"(WinTcb)";
-			if ((processList[i].m_ppl & 0b11110000) == 112) signer = L"(WinSystem)";
-			if ((processList[i].m_ppl & 0b11110000) == 128) signer = L"(App)";
-			if ((processList[i].m_ppl & 0b11110000) == 144) signer = L"(Max)";
+            if ((processList[i].getPpl() & 0b11110000) == 0) signer = L"(None)";
+            if ((processList[i].getPpl() & 0b11110000) == 16) signer = L"(Authenticode)";
+            if ((processList[i].getPpl() & 0b11110000) == 32) signer = L"(CodeGen)";
+            if ((processList[i].getPpl() & 0b11110000) == 48) signer = L"(Antimalware)";
+            if ((processList[i].getPpl() & 0b11110000) == 64) signer = L"(Lsa)";
+            if ((processList[i].getPpl() & 0b11110000) == 80) signer = L"(Windows)";
+            if ((processList[i].getPpl() & 0b11110000) == 96) signer = L"(WinTcb)";
+            if ((processList[i].getPpl() & 0b11110000) == 112) signer = L"(WinSystem)";
+            if ((processList[i].getPpl() & 0b11110000) == 128) signer = L"(App)";
+            if ((processList[i].getPpl() & 0b11110000) == 144) signer = L"(Max)";
 
-			std::wstring tmp = type + L" " + signer;
-			ListView_SetItemText(hwndListView, index, 7, const_cast<LPWSTR>(tmp.c_str()));
-		}
+            std::wstring tmp = type + L" " + signer;
+            ListView_SetItemText(hwndListView, index, 7, const_cast<LPWSTR>(tmp.c_str()));
+        }
 
-		// 设置第九列（用户名）
-		if (!processList[i].m_userDomain.empty() && !processList[i].m_userName.empty()) {
-			std::wstring str9 = processList[i].m_userDomain + L"\\" + processList[i].m_userName;
-			ListView_SetItemText(hwndListView, index, 8, const_cast<LPWSTR>(str9.c_str()));
-		}
-		
-		// 设置第十列（PEB基址）
-		if (processList[i].m_peb != nullptr) {
-			std::wstringstream wss10;
-			wss10 << L"0x" << std::uppercase << std::hex 
-				<< reinterpret_cast<uintptr_t>(processList[i].m_peb);
-			std::wstring str10 = wss10.str();
-			ListView_SetItemText(hwndListView, index, 9, const_cast<LPWSTR>(str10.c_str()));
-		}
-		
-		
+        // 设置第九列（用户名）
+        if (!processList[i].getUserDomain().empty() && !processList[i].getUserName().empty()) {
+            std::wstring str9 = processList[i].getUserDomain() + L"\\" + processList[i].getUserName();
+            ListView_SetItemText(hwndListView, index, 8, const_cast<LPWSTR>(str9.c_str()));
+        }
+        
+        // 设置第十列（PEB基址）
+        if (processList[i].getPeb() != nullptr) {
+            std::wstringstream wss10;
+            wss10 << L"0x" << std::uppercase << std::hex 
+                << reinterpret_cast<uintptr_t>(processList[i].getPeb());
+            std::wstring str10 = wss10.str();
+            ListView_SetItemText(hwndListView, index, 9, const_cast<LPWSTR>(str10.c_str()));
+        }
+    }
 
-	}
+    // 开启重绘
+    SendMessage(hwndListView, WM_SETREDRAW, TRUE, 0);
 
-	// 开启重绘
-	SendMessage(hwndListView, WM_SETREDRAW, TRUE, 0);
-
-	// 强制重绘列表视图和表头
-	InvalidateRect(hwndListView, NULL, TRUE);
-
+    // 强制重绘列表视图和表头
+    InvalidateRect(hwndListView, NULL, TRUE);
 }
 
 

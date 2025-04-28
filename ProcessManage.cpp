@@ -60,15 +60,15 @@ void ProcessManage::InitProcessList() {
 		m_processList.emplace_back();
 		ProcessInfo& newProcess = m_processList.back();
 		if (processInfo->ImageName.Buffer) {
-			newProcess.m_pid = HandleToULong(processInfo->UniqueProcessId);
-			newProcess.m_processName = processInfo->ImageName.Buffer;
-			newProcess.m_threadsNum = processInfo->NumberOfThreads;
-			newProcess.m_parrentProcessId = HandleToULong(processInfo->Reserved2);
+			newProcess.setPid(HandleToULong(processInfo->UniqueProcessId));
+			newProcess.setProcessName(processInfo->ImageName.Buffer);
+			newProcess.setThreadsNum(processInfo->NumberOfThreads);
+			newProcess.setParrentProcessId(HandleToULong(processInfo->Reserved2));
 			//newProcess.m_createTime = *reinterpret_cast<PLARGE_INTEGER>(processInfo + 0x20);
 		}
 		else {
-			newProcess.m_pid = HandleToULong(processInfo->UniqueProcessId);
-			newProcess.m_processName = L"系统空闲进程";
+			newProcess.setPid(HandleToULong(processInfo->UniqueProcessId));
+			newProcess.setProcessName(L"系统空闲进程");
 		}
 
 		if (processInfo->NextEntryOffset == 0) {
@@ -83,11 +83,11 @@ void ProcessManage::InitProcessList() {
 void ProcessManage::InitProcessPath() {
 
 	for (int i = 0; i < m_processList.size(); i++) {
-		if (m_processList[i].m_processName == L"Registry" && m_processList[i].m_pid <= 200) {
+		if (m_processList[i].getProcessName() == L"Registry" && m_processList[i].getPid() <= 200) {
 			continue;
 		}
 
-		if (m_processList[i].m_processName == L"Memory Compression") {
+		if (m_processList[i].getProcessName() == L"Memory Compression") {
 			continue;
 		}
 
@@ -97,7 +97,7 @@ void ProcessManage::InitProcessPath() {
 		OBJECT_ATTRIBUTES ObjectAttributes;
 		InitializeObjectAttributes(&ObjectAttributes, NULL, NULL, NULL, NULL);
 		CLIENT_ID clientID = { 0 };
-		clientID.UniqueProcess = ULongToHandle(m_processList[i].m_pid);
+		clientID.UniqueProcess = ULongToHandle(m_processList[i].getPid());
 		NTSTATUS status =
 			api.ZwOpenProcess(&hProcess, PROCESS_QUERY_LIMITED_INFORMATION,
 				&ObjectAttributes, &clientID);
@@ -141,7 +141,7 @@ void ProcessManage::InitProcessPath() {
 
 		UNICODE_STRING newProcessInfo = *reinterpret_cast<PUNICODE_STRING>(buffer.get());
 		if (newProcessInfo.Buffer) {
-			m_processList[i].m_processPath = newProcessInfo.Buffer;
+			m_processList[i].setProcessPath(newProcessInfo.Buffer);
 		}
 		CloseHandle(hProcess);
 	}
@@ -151,11 +151,11 @@ void ProcessManage::InitProcessPath() {
 
 void ProcessManage::InitProcessPeb() {
 	for (int i = 0; i < m_processList.size(); i++) {
-		if (m_processList[i].m_processName == L"Registry" && m_processList[i].m_pid <= 200) {
+		if (m_processList[i].getProcessName() == L"Registry" && m_processList[i].getPid() <= 200) {
 			continue;
 		}
 
-		if (m_processList[i].m_processName == L"Memory Compression") {
+		if (m_processList[i].getProcessName() == L"Memory Compression") {
 			continue;
 		}
 
@@ -166,7 +166,7 @@ void ProcessManage::InitProcessPeb() {
 		OBJECT_ATTRIBUTES ObjectAttributes;
 		InitializeObjectAttributes(&ObjectAttributes, NULL, NULL, NULL, NULL);
 		CLIENT_ID clientID = { 0 };
-		clientID.UniqueProcess = ULongToHandle(m_processList[i].m_pid);
+		clientID.UniqueProcess = ULongToHandle(m_processList[i].getPid());
 		NTSTATUS status =
 			api.ZwOpenProcess(&hProcess, PROCESS_QUERY_LIMITED_INFORMATION,
 				&ObjectAttributes, &clientID);
@@ -192,13 +192,12 @@ void ProcessManage::InitProcessPeb() {
 
 		PROCESS_BASIC_INFORMATION newProcessInfo = buffer;
 		if (newProcessInfo.PebBaseAddress) {
-			m_processList[i].m_peb = newProcessInfo.PebBaseAddress;
+			m_processList[i].setPeb(newProcessInfo.PebBaseAddress);
 		}
 		CloseHandle(hProcess);
 	}
 
 	return;
-
 }
 
 std::wstring ProcessManage::DosPathGetFileName(const std::wstring& path) {
@@ -225,8 +224,8 @@ void ProcessManage::ListNtPathToDos() {
 
 	for (const auto& p : driverList) {
 		for (auto& p2 : m_processList) {
-			if (p2.m_processPath.find(p.first) == 0) {
-				p2.m_processPath.replace(0, p.first.length(), p.second);
+			if (p2.getProcessPath().find(p.first) == 0) {
+				p2.setProcessPath(p2.getProcessPath().replace(0, p.first.length(), p.second));
 			}
 		}
 	}
@@ -309,7 +308,7 @@ bool ProcessManage::IsPidExistedInList(ULONG pid) {
 	bool exsited = false;
 
 	for (const auto& p : m_processList) {
-		if (p.m_pid == pid) {
+		if (p.getPid() == pid) {
 			exsited = true;
 			break;
 		}
@@ -327,10 +326,10 @@ bool ProcessManage::DetectHiddenProcessByPid(std::vector<ProcessInfo>& processLi
 				if (path != L"") {
 					processList.emplace_back();
 					ProcessInfo& newProcess = processList.back();
-					newProcess.m_pid = pid;
-					newProcess.m_processName = DosPathGetFileName(path);
-					newProcess.m_processPath = path;
-					newProcess.m_isHide = true;
+					newProcess.setPid(pid);
+					newProcess.setProcessName(DosPathGetFileName(path));
+					newProcess.setProcessPath(path);
+					newProcess.setIsHide(true);
 				}
 			}
 		}
@@ -373,16 +372,16 @@ bool ProcessManage::IsCritical(ULONG pid) {
 
 void ProcessManage::InitProcessCritical() {
 	for (int i = 0; i < m_processList.size(); i++) {
-		if (m_processList[i].m_processName == L"Registry" && m_processList[i].m_pid <= 200) {
+		if (m_processList[i].getProcessName() == L"Registry" && m_processList[i].getPid() <= 200) {
 			continue;
 		}
 
-		if (m_processList[i].m_processName == L"Memory Compression") {
+		if (m_processList[i].getProcessName() == L"Memory Compression") {
 			continue;
 		}
 
-		bool isCritical = IsCritical(m_processList[i].m_pid);
-		m_processList[i].m_isCritical = isCritical;
+		bool isCritical = IsCritical(m_processList[i].getPid());
+		m_processList[i].setIsCritical(isCritical);
 	}
 	return;
 }
@@ -397,16 +396,16 @@ void ProcessManage::InitProcessParrentName() {
 
 
 		std::wstring parrentProcessName;
-		if (m_processList[i].m_parrentProcessId == 4) {
+		if (m_processList[i].getParrentProcessId() == 4) {
 			parrentProcessName = L"System";
 		} else {
-			parrentProcessName = GetProcessParrentName(m_processList[i].m_parrentProcessId);
+			parrentProcessName = GetProcessParrentName(m_processList[i].getParrentProcessId());
 		}
 
 		if (parrentProcessName == L"") {
 			parrentProcessName = L"(进程已销毁)";
 		}
-		m_processList[i].m_parrentProcessName = parrentProcessName;
+		m_processList[i].setParrentProcessName(parrentProcessName);
 	}
 	return;
 }
@@ -424,8 +423,8 @@ BYTE ProcessManage::GetProcessPpl(ULONG pid) {
 
 void ProcessManage::InitProcessPpl() {
 	for (int i = 0; i < m_processList.size(); i++) {
-		BYTE ppl = GetProcessPpl(m_processList[i].m_pid);
-		m_processList[i].m_ppl = ppl;
+		BYTE ppl = GetProcessPpl(m_processList[i].getPid());
+		m_processList[i].setPpl(ppl);
 	}
 	return;
 }
@@ -479,8 +478,8 @@ std::wstring ProcessManage::GetProcessSid(ULONG pid) {
 
 void ProcessManage::InitProcessSid() {
 	for (int i = 0; i < m_processList.size(); i++) {
-		std::wstring sid = GetProcessSid(m_processList[i].m_pid);
-		m_processList[i].m_sid = sid;
+		std::wstring sid = GetProcessSid(m_processList[i].getPid());
+		m_processList[i].setSid(sid);
 	}
 	return;
 }
@@ -550,17 +549,17 @@ std::wstring ProcessManage::GetSidDomain(std::wstring stringSid) {
 
 void ProcessManage::InitProcessUserName() {
 	for (int i = 0; i < m_processList.size(); i++) {
-		if (m_processList[i].m_processName == L"系统空闲进程" && m_processList[i].m_pid == 0) {
-			m_processList[i].m_userName = L"SYSTEM";
+		if (m_processList[i].getProcessName() == L"系统空闲进程" && m_processList[i].getPid() == 0) {
+			m_processList[i].setUserName(L"SYSTEM");
 		}
 
-		if (m_processList[i].m_processName == L"System" && m_processList[i].m_pid == 4) {
-			m_processList[i].m_userName = L"SYSTEM";
+		if (m_processList[i].getProcessName() == L"System" && m_processList[i].getPid() == 4) {
+			m_processList[i].setUserName(L"SYSTEM");
 		}
 
-		if (!m_processList[i].m_sid.empty()) {
-			std::wstring userName = GetSidUserName(m_processList[i].m_sid);
-			m_processList[i].m_userName = userName;
+		if (!m_processList[i].getSid().empty()) {
+			std::wstring userName = GetSidUserName(m_processList[i].getSid());
+			m_processList[i].setUserName(userName);
 		}
 	}
 	return;
@@ -568,17 +567,17 @@ void ProcessManage::InitProcessUserName() {
 
 void ProcessManage::InitProcessUserDomain() {
 	for (int i = 0; i < m_processList.size(); i++) {
-		if (m_processList[i].m_processName == L"系统空闲进程" && m_processList[i].m_pid == 0) {
-			m_processList[i].m_userDomain = L"NT AUTHORITY";
+		if (m_processList[i].getProcessName() == L"系统空闲进程" && m_processList[i].getPid() == 0) {
+			m_processList[i].setUserDomain(L"NT AUTHORITY");
 		}
 
-		if (m_processList[i].m_processName == L"System" && m_processList[i].m_pid == 4) {
-			m_processList[i].m_userDomain = L"NT AUTHORITY";
+		if (m_processList[i].getProcessName() == L"System" && m_processList[i].getPid() == 4) {
+			m_processList[i].setUserDomain(L"NT AUTHORITY");
 		}
 
-		if (!m_processList[i].m_sid.empty()) {
-			std::wstring userDomain = GetSidDomain(m_processList[i].m_sid);
-			m_processList[i].m_userDomain = userDomain;
+		if (!m_processList[i].getSid().empty()) {
+			std::wstring userDomain = GetSidDomain(m_processList[i].getSid());
+			m_processList[i].setUserDomain(userDomain);
 		}
 	}
 	return;

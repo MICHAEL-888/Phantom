@@ -11,7 +11,7 @@ class ProcessManage {
 
 private:
 	class ProcessInfo {
-	public:
+	private:
 
 		ULONG m_pid{};
 		std::wstring m_processName{};
@@ -29,6 +29,41 @@ private:
 		std::wstring m_sid{};	// sid–≈œ¢
 		std::wstring m_userDomain{};
 		std::wstring m_userName{};
+
+	public:
+		ULONG getPid() const { return m_pid; }
+		std::wstring getProcessName() const { return m_processName; }
+		std::wstring getProcessPath() const { return m_processPath; }
+		bool getIsHide() const { return m_isHide; }
+		ULONG getThreadsNum() const { return m_threadsNum; }
+		ULONG getParrentProcessId() const { return m_parrentProcessId; }
+		std::wstring getParrentProcessName() const { return m_parrentProcessName; }
+		LARGE_INTEGER getCreateTime() const { return m_createTime; }
+		PPEB getPeb() const { return m_peb; }
+		BYTE getIsDebugged() const { return m_isDebugged; }
+		std::vector<std::wstring> getModule() const { return m_module; }
+		bool getIsCritical() const { return m_isCritical; }
+		BYTE getPpl() const { return m_ppl; }
+		std::wstring getSid() const { return m_sid; }
+		std::wstring getUserDomain() const { return m_userDomain; }
+		std::wstring getUserName() const { return m_userName; }
+
+		void setPid(const int& m_pid) { this->m_pid = m_pid; }
+		void setProcessName(const std::wstring& m_processName) { this->m_processName = m_processName; }
+		void setProcessPath(const std::wstring& m_processPath) { this->m_processPath = m_processPath; }
+		void setIsHide(const bool& m_isHide) { this->m_isHide = m_isHide; }
+		void setThreadsNum(const int& m_threadsNum) { this->m_threadsNum = m_threadsNum; }
+		void setParrentProcessId(const int& m_parrentProcessId) { this->m_parrentProcessId = m_parrentProcessId; }
+		void setParrentProcessName(const std::wstring& m_parrentProcessName) { this->m_parrentProcessName = m_parrentProcessName; }
+		void setCreateTime(const LARGE_INTEGER& m_createTime) { this->m_createTime = m_createTime; }
+		void setPeb(const PPEB& m_peb) { this->m_peb = m_peb; }
+		void setIsDebugged(const BYTE& m_isDebugged) { this->m_isDebugged = m_isDebugged; }
+		void setModule(const std::vector<std::wstring>& m_module) { this->m_module = m_module; }
+		void setIsCritical(const bool& m_isCritical) { this->m_isCritical = m_isCritical; }
+		void setPpl(const BYTE& m_ppl) { this->m_ppl = m_ppl; }
+		void setSid(const std::wstring& m_sid) { this->m_sid = m_sid; }
+		void setUserDomain(const std::wstring& m_userDomain) { this->m_userDomain = m_userDomain; }
+		void setUserName(const std::wstring& m_userName) { this->m_userName = m_userName; }
 	};
 
 	std::vector<ProcessInfo> m_processList;
@@ -50,6 +85,10 @@ private:
 	void InitProcessUserDomain();
 
 public:
+	std::vector<ProcessInfo> getProcessList() const { return m_processList; }
+
+
+public:
 	ProcessManage();
 	~ProcessManage();
 	const std::vector<ProcessManage::ProcessInfo>& GetProcessList() const {
@@ -63,7 +102,7 @@ public:
 	const int GetProcessHiddenCount() const {
 		int cnt = 0;
 		for (const auto& p : m_processList) {
-			if (p.m_isHide) {
+			if (p.getIsHide()) {
 				cnt++;
 			}
 		}
