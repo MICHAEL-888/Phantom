@@ -8,6 +8,7 @@
 #include <iomanip>
 #include "ProcessManage.h"
 #include "PrivilegeElevate.h"
+#include "ModuleWindow.h"
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
@@ -34,7 +35,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 //	return 0;
 //}
 
-int GetDPI() {
+extern int GetDPI() {
 	// 此函数参考精易模块获取系统DPI
 	HDC hDC;
 	int DPI_A, DPI_B;
@@ -573,6 +574,34 @@ LRESULT CALLBACK MainWndProc(
 			break;
 		}
 		}
+	case ID_MENU_VIEW_PROCESS_MODULES:
+	{
+		// 获取选中项
+		int selectedItem = ListView_GetNextItem(hwndListView, -1, LVNI_SELECTED);
+		if (selectedItem != -1)
+		{
+			LVITEM lvi = { 0 };
+			lvi.mask = LVIF_PARAM;
+			lvi.iItem = selectedItem;
+			ListView_GetItem(hwndListView, &lvi);
+			DWORD selectedPid = (DWORD)lvi.lParam;
+
+			// 创建一个ProcessInfo对象的副本而不是引用
+			ProcessManage::ProcessInfo processInfotmp;
+			for (const auto& process : processManage.GetProcessList()) {
+				if (process.getPid() == selectedPid) {
+					processInfotmp = process; // 复制而不是引用
+					break;
+				}
+			}
+
+			// 直接传递对象而不是lambda
+			ModuleWindow(hwnd, selectedPid, processInfotmp);
+		}
+
+		break;
+	}
+		
 	case ID_MENU_PROPERTY:
 	{
 		// 获取选中项
@@ -685,7 +714,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 		L"Phantom_ARK v1.0.0",    // Window text
 		WS_OVERLAPPEDWINDOW,            // Window style 
 		// Size and position
-		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+		CW_USEDEFAULT, CW_USEDEFAULT, 1200 * GetDPI() / 100, 750 * GetDPI() / 100,
 
 		NULL,       // Parent window    
 		NULL,       // Menu
@@ -697,6 +726,18 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 	{
 		return 0;
 	}
+
+	// 获取屏幕分辨率
+	int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+	int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+	// 计算居中位置
+	int x = (screenWidth - 1200 * GetDPI() / 100) / 2;
+	int y = (screenHeight - 750 * GetDPI() / 100) / 2;
+
+	// 设置窗口居中
+	SetWindowPos(hwnd, NULL, x, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+
 
 	ShowWindow(hwnd, nCmdShow);
 

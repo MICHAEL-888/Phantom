@@ -281,6 +281,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="API.cpp" />
+    <ClCompile Include="ModuleWindow.cpp" />
     <ClCompile Include="PrivilegeElevate.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ProcessManage.cpp" />
@@ -290,8 +291,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="API.h" />
+    <ClInclude Include="ModuleWindow.h" />
     <ClInclude Include="PrivilegeElevate.h" />
     <ClInclude Include="ProcessManage.h" />
+    <ClInclude Include="resource2.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Phantom_ARK1.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

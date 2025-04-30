@@ -8,8 +8,7 @@
 
 
 class ProcessManage {
-
-private:
+public:
 	class ProcessInfo {
 	private:
 
@@ -65,6 +64,9 @@ private:
 		void setUserDomain(const std::wstring& m_userDomain) { this->m_userDomain = m_userDomain; }
 		void setUserName(const std::wstring& m_userName) { this->m_userName = m_userName; }
 	};
+
+private:
+	
 
 	std::vector<ProcessInfo> m_processList;
 

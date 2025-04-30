@@ -1,6 +1,9 @@
-﻿  main.cpp
-C:\Users\Michael\source\repos\Phantom\ProcessManage.h(99,28): warning C4267: “return”: 从“size_t”转换到“const int”，可能丢失数据
-  (编译源文件“main.cpp”)
+﻿  ModuleWindow.cpp
+C:\Users\Michael\source\repos\Phantom\ProcessManage.h(101,28): warning C4267: “return”: 从“size_t”转换到“const int”，可能丢失数据
+  (编译源文件“ModuleWindow.cpp”)
   
-C:\Users\Michael\source\repos\Phantom\main.cpp(106,30): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+C:\Users\Michael\source\repos\Phantom\ModuleWindow.cpp(46,90): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+C:\Users\Michael\source\repos\Phantom\ModuleWindow.cpp(46,61): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+C:\Users\Michael\source\repos\Phantom\ModuleWindow.cpp(65,11): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+C:\Users\Michael\source\repos\Phantom\ModuleWindow.cpp(66,11): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
   Phantom_ARK.vcxproj -> C:\Users\Michael\source\repos\Phantom\ARM64\Debug\Phantom_ARK.exe
