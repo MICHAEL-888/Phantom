@@ -74,6 +74,17 @@ void API::InitProcAdress() {
 		return;
 	}
 
+	m_ZwReadVirtualMemory = (hZwReadVirtualMemory)GetProcAddress(m_hNtDll,
+		"ZwReadVirtualMemory");
+
+	if (!m_ZwReadVirtualMemory) {
+		std::cerr << "API::InitProcAdress \"Failed to get "
+			"ZwReadVirtualMemory address\""
+			<< std::endl
+			<< std::flush;
+		return;
+	}
+
 	return;
 }
 
@@ -88,11 +99,11 @@ HANDLE API::ZwOpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle,
 	DWORD dwProcessId) {
 	HANDLE hProcess;
 	OBJECT_ATTRIBUTES ObjectAttributes;
-	InitializeObjectAttributes(&ObjectAttributes, NULL, NULL, NULL, NULL);
+	InitializeObjectAttributes(&ObjectAttributes, NULL, bInheritHandle, NULL, NULL);
 	CLIENT_ID clientID = { 0 };
 	clientID.UniqueProcess = ULongToHandle(dwProcessId);
 	NTSTATUS status =
-		m_ZwOpenProcess(&hProcess, PROCESS_QUERY_LIMITED_INFORMATION,
+		m_ZwOpenProcess(&hProcess, dwDesiredAccess,
 			&ObjectAttributes, &clientID);
 	if (!NT_SUCCESS(status)) {
 		std::cerr << "API::ZwOpenProcess \"Failed to open process\"";
@@ -132,4 +143,10 @@ NTSTATUS API::ZwDuplicateToken(HANDLE ExistingTokenHandle,
 	return m_ZwDuplicateToken(ExistingTokenHandle, DesiredAccess,
 		ObjectAttributes, EffectiveOnly, Type,
 		NewTokenHandle);
+}
+
+NTSTATUS API::ZwReadVirtualMemory(HANDLE ProcessHandle, PVOID BaseAddress, PVOID Buffer,
+	SIZE_T NumberOfBytesToRead, PSIZE_T NumberOfBytesRead) {
+	return m_ZwReadVirtualMemory(ProcessHandle, BaseAddress, Buffer,
+		NumberOfBytesToRead, NumberOfBytesRead);
 }

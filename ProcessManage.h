@@ -5,7 +5,13 @@
 #include <winternl.h>
 #include <sddl.h>
 
+struct ModuleInfo {
+	std::wstring m_moduleName{};
+	PVOID m_dllBase{};
+	ULONG m_imageSize{};
+	std::wstring m_modulePath{};
 
+};
 
 class ProcessManage {
 public:
@@ -28,6 +34,7 @@ public:
 		std::wstring m_sid{};	// sid–≈œ¢
 		std::wstring m_userDomain{};
 		std::wstring m_userName{};
+		std::vector<struct ModuleInfo> m_moduleInfo{};
 
 	public:
 		ULONG getPid() const { return m_pid; }
@@ -46,6 +53,7 @@ public:
 		std::wstring getSid() const { return m_sid; }
 		std::wstring getUserDomain() const { return m_userDomain; }
 		std::wstring getUserName() const { return m_userName; }
+		std::vector<ModuleInfo> getModuleInfo() const { return m_moduleInfo; }
 
 		void setPid(const int& m_pid) { this->m_pid = m_pid; }
 		void setProcessName(const std::wstring& m_processName) { this->m_processName = m_processName; }
@@ -63,6 +71,9 @@ public:
 		void setSid(const std::wstring& m_sid) { this->m_sid = m_sid; }
 		void setUserDomain(const std::wstring& m_userDomain) { this->m_userDomain = m_userDomain; }
 		void setUserName(const std::wstring& m_userName) { this->m_userName = m_userName; }
+		void setModuleInfo(const ModuleInfo& m_moduleInfo) { this->m_moduleInfo.emplace_back(m_moduleInfo); }
+
+		int InitModuleList(ProcessManage::ProcessInfo& processInfo);
 	};
 
 private:
@@ -127,4 +138,6 @@ public:
 	std::wstring GetSidUserName(std::wstring stringSid);
 
 	std::wstring GetSidDomain(std::wstring stringSid);
+
+	
 };

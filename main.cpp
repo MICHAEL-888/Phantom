@@ -216,6 +216,7 @@ LRESULT CALLBACK MainWndProc(
 	LPARAM lParam)    // second message parameter
 {
 	static ProcessManage processManage;
+
 	static HWND hwndStatus;
 	static HWND hwndTab;
 	static HFONT hFont;
@@ -387,6 +388,8 @@ LRESULT CALLBACK MainWndProc(
 		lvColumn.fmt = LVCFMT_LEFT;
 		lvColumn.pszText = L"PEB»ùÖ·";
 		ListView_InsertColumn(hwndListView, 9, &lvColumn);
+
+		processManage.RefreshProcessList();
 		
 		FillProcessListView(hwndListView, processManage);
 

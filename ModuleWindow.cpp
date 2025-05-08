@@ -4,10 +4,19 @@
 #include "ProcessManage.h"
 #include <CommCtrl.h>
 #include <string>
+#include "API.h"
+#include <sstream>
+
 
 #define LISTVIEW_ID_1 3000
 
 extern int GetDPI();
+
+static API api;
+
+
+
+
 
 LRESULT CALLBACK ModuleWndProc(
 	HWND hwnd,        // handle to window
@@ -181,7 +190,7 @@ LRESULT CALLBACK ModuleWndProc(
         lvColumn.pszText = L"模块名称";
         ListView_InsertColumn(hwndListView, 0, &lvColumn);
 
-        lvColumn.cx = 150;
+        lvColumn.cx = 200;
         lvColumn.fmt = LVCFMT_LEFT;
         lvColumn.pszText = L"模块基址";
         ListView_InsertColumn(hwndListView, 1, &lvColumn);
@@ -213,6 +222,44 @@ LRESULT CALLBACK ModuleWndProc(
         std::wstring windowTitle = L"模块信息" + processInfo.getProcessName() 
             + L"[" + std::to_wstring(processInfo.getPid()) + L"] - Phantom_ARK";
         SetWindowText(hwnd, windowTitle.c_str());
+
+		// GetModuleList(processInfo);
+        processInfo.InitModuleList(processInfo);
+
+        for (size_t i = 0; i < processInfo.getModuleInfo().size(); i++) {
+            // 创建列表项
+            LVITEM lvItem;
+            ZeroMemory(&lvItem, sizeof(lvItem));
+
+            // 设置第一列（进程名称）
+            lvItem.mask = LVIF_TEXT | LVIF_PARAM;
+            lvItem.iItem = static_cast<int>(i);
+            lvItem.iSubItem = 0;
+            std::wstring wstr1 = processInfo.getModuleInfo()[i].m_moduleName;
+            lvItem.pszText = const_cast<LPWSTR>(wstr1.c_str());
+            lvItem.lParam = i;
+
+            // 插入列表项
+            int index = ListView_InsertItem(hwndListView, &lvItem);
+
+            // 设置第二列（模块基址）
+            std::wstringstream wss2;
+            wss2 << L"0x" << std::uppercase << std::hex
+                << reinterpret_cast<uintptr_t>(processInfo.getModuleInfo()[i].m_dllBase);
+            std::wstring str2 = wss2.str();
+            ListView_SetItemText(hwndListView, index, 1, const_cast<LPWSTR>(str2.c_str()));
+
+            // 设置第三列（模块大小）
+            std::wstringstream wss3;
+            wss3 << L"0x" << std::uppercase << std::hex
+                << processInfo.getModuleInfo()[i].m_imageSize;
+            std::wstring str3 = wss3.str();
+            ListView_SetItemText(hwndListView, index, 2, const_cast<LPWSTR>(str3.c_str()));
+
+            // 设置第四列（模块路径）
+            std::wstring str4 = processInfo.getModuleInfo()[i].m_modulePath;
+            ListView_SetItemText(hwndListView, index, 3, const_cast<LPWSTR>(str4.c_str()));
+        }
 
         return 0;
     }
@@ -262,3 +309,4 @@ LRESULT CALLBACK ModuleWndProc(
     }
     return 0;
 }
+

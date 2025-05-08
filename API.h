@@ -77,6 +77,9 @@ typedef NTSTATUS(NTAPI* hZwDuplicateToken)(HANDLE ExistingTokenHandle,
 	TOKEN_TYPE Type,
 	PHANDLE NewTokenHandle);
 
+typedef NTSTATUS (NTAPI* hZwReadVirtualMemory)(HANDLE ProcessHandle, PVOID BaseAddress, PVOID Buffer,
+	SIZE_T NumberOfBytesToRead, PSIZE_T NumberOfBytesRead);
+
 class API {
 public:
 	API();
@@ -112,6 +115,9 @@ public:
 		BOOLEAN EffectiveOnly, TOKEN_TYPE Type,
 		PHANDLE NewTokenHandle);
 
+	NTSTATUS ZwReadVirtualMemory(HANDLE ProcessHandle, PVOID BaseAddress, PVOID Buffer,
+		SIZE_T NumberOfBytesToRead, PSIZE_T NumberOfBytesRead);
+
 private:
 	HMODULE m_hNtDll;
 
@@ -120,4 +126,5 @@ private:
 	hZwOpenProcess m_ZwOpenProcess;
 	hZwOpenProcessToken m_ZwOpenProcessToken;
 	hZwDuplicateToken m_ZwDuplicateToken;
+	hZwReadVirtualMemory m_ZwReadVirtualMemory;
 };
