@@ -190,7 +190,7 @@ LRESULT CALLBACK ModuleWndProc(
         lvColumn.pszText = L"模块名称";
         ListView_InsertColumn(hwndListView, 0, &lvColumn);
 
-        lvColumn.cx = 200;
+        lvColumn.cx = 220;
         lvColumn.fmt = LVCFMT_LEFT;
         lvColumn.pszText = L"模块基址";
         ListView_InsertColumn(hwndListView, 1, &lvColumn);

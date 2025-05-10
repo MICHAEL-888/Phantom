@@ -75,6 +75,7 @@ public:
 		void setModuleInfo(const ModuleInfo& m_moduleInfo) { this->m_moduleInfo.emplace_back(m_moduleInfo); }
 
 		int InitModuleList(ProcessManage::ProcessInfo& processInfo);
+		int InitModuleList32(ProcessManage::ProcessInfo& processInfo);
 	};
 
 private:

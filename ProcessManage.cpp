@@ -635,9 +635,74 @@ void ProcessManage::InitProcessUserDomain() {
 	return;
 }
 
+typedef struct _PEB32
+{
+	BOOLEAN InheritedAddressSpace;
+	BOOLEAN ReadImageFileExecOptions;
+	BOOLEAN BeingDebugged;
+	union
+	{
+		BOOLEAN BitField;
+		struct
+		{
+			BOOLEAN ImageUsesLargePages : 1;
+			BOOLEAN IsProtectedProcess : 1;
+			BOOLEAN IsImageDynamicallyRelocated : 1;
+			BOOLEAN SkipPatchingUser32Forwarders : 1;
+			BOOLEAN IsPackagedProcess : 1;
+			BOOLEAN IsAppContainer : 1;
+			BOOLEAN IsProtectedProcessLight : 1;
+			BOOLEAN IsLongPathAwareProcess : 1;
+		};
+	};
+	ULONG Mutant;
+
+	ULONG ImageBaseAddress;
+	ULONG Ldr;
+	
+} PEB32, * PPEB32;
+
+typedef struct _PEB_LDR_DATA32
+{
+	ULONG Length;
+	BOOLEAN Initialized;
+	ULONG SsHandle;
+	LIST_ENTRY32 InLoadOrderModuleList;
+	LIST_ENTRY32 InMemoryOrderModuleList;
+	LIST_ENTRY32 InInitializationOrderModuleList;
+	ULONG EntryInProgress;
+	BOOLEAN ShutdownInProgress;
+	ULONG ShutdownThreadId;
+} PEB_LDR_DATA32, * PPEB_LDR_DATA32;
+
+typedef struct _UNICODE_STRING32
+{
+	USHORT Length;
+	USHORT MaximumLength;
+	ULONG Buffer;
+} UNICODE_STRING32;
+
+typedef struct _LDR_DATA_TABLE_ENTRY32
+{
+	LIST_ENTRY32 InLoadOrderLinks;
+	LIST_ENTRY32 InMemoryOrderLinks;
+	union
+	{
+		LIST_ENTRY32 InInitializationOrderLinks;
+		LIST_ENTRY32 InProgressLinks;
+	};
+	ULONG DllBase;
+	ULONG EntryPoint;
+	ULONG SizeOfImage;
+	UNICODE_STRING32 FullDllName;
+	UNICODE_STRING32 BaseDllName;
+} LDR_DATA_TABLE_ENTRY32, * PLDR_DATA_TABLE_ENTRY32;
+
+
 int ProcessManage::ProcessInfo::InitModuleList(ProcessManage::ProcessInfo& processInfo) {
 
-	// 只支持64位进程
+	bool wow64Flag = false;
+
 	HANDLE hProcess = api.ZwOpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, processInfo.getPid());
 	if (!hProcess) {
 		std::cerr << "GetModuleList::ZwOpenProcess error" << std::endl;
@@ -646,6 +711,7 @@ int ProcessManage::ProcessInfo::InitModuleList(ProcessManage::ProcessInfo& proce
 
 	PEB peb{};
 	SIZE_T readlen{};
+	// PVOID test = reinterpret_cast<PVOID>(reinterpret_cast<uintptr_t>(processInfo.getPeb()) + 0x1000);
 	NTSTATUS status = api.ZwReadVirtualMemory(hProcess, processInfo.getPeb(), &peb, sizeof(peb), &readlen);
 
 	if (!NT_SUCCESS(status)) {
@@ -703,6 +769,95 @@ int ProcessManage::ProcessInfo::InitModuleList(ProcessManage::ProcessInfo& proce
 		moduleInfo.m_moduleName = pm.DosPathGetFileName(moduleInfo.m_modulePath);
 		moduleInfo.m_dllBase = ldrEntry.DllBase;
 		moduleInfo.m_imageSize = reinterpret_cast<ULONG>(ldrEntry.Reserved3[1]);
+		processInfo.setModuleInfo(moduleInfo);
+		head = ldrEntry.InMemoryOrderLinks;
+		
+		// 此处判断wow64
+		if (!wow64Flag && reinterpret_cast<ULONG_PTR>(ldrEntry.DllBase) < 0xFFFFFFFF) {
+			wow64Flag = true;
+		}
+	}
+
+	if (wow64Flag) {
+		InitModuleList32(processInfo);
+	}
+
+	CloseHandle(hProcess);
+	return 0;
+
+
+}
+
+int ProcessManage::ProcessInfo::InitModuleList32(ProcessManage::ProcessInfo& processInfo) {
+
+	HANDLE hProcess = api.ZwOpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, processInfo.getPid());
+	if (!hProcess) {
+		std::cerr << "GetModuleList::ZwOpenProcess error" << std::endl;
+		return 0;
+	}
+
+	PEB32 peb{};
+	SIZE_T readlen{};
+
+	NTSTATUS status = api.ZwReadVirtualMemory(hProcess, reinterpret_cast<PVOID>(reinterpret_cast<uintptr_t>(processInfo.getPeb()) + 0x1000), &peb, sizeof(peb), &readlen);
+
+	if (!NT_SUCCESS(status)) {
+		std::cerr << "GetModuleList::ZwReadVirtualMemory error" << std::endl;
+		CloseHandle(hProcess);
+		return 0;
+	}
+
+	PEB_LDR_DATA32 ldr{};
+	status = api.ZwReadVirtualMemory(hProcess, reinterpret_cast<PVOID>(peb.Ldr), &ldr, sizeof(ldr), &readlen);
+	if (!NT_SUCCESS(status)) {
+		std::cerr << "GetModuleList::ZwReadVirtualMemory error" << std::endl;
+		CloseHandle(hProcess);
+		return 0;
+	}
+
+	LIST_ENTRY32 head, * next{};
+	// InLoadOrderLinks
+	head = ldr.InMemoryOrderModuleList;
+	// 分清楚目标进程地址和当前进程地址，小心出错！！！
+	next = (LIST_ENTRY32*)((ULONG)peb.Ldr + FIELD_OFFSET(PEB_LDR_DATA32, InMemoryOrderModuleList));
+
+	while (reinterpret_cast<PVOID>(head.Flink) != next) {
+		static struct ModuleInfo moduleInfo;
+		LDR_DATA_TABLE_ENTRY32 ldrEntry{};
+
+		status = api.ZwReadVirtualMemory(hProcess, (PVOID)((ULONG)head.Flink - FIELD_OFFSET(LDR_DATA_TABLE_ENTRY32, InMemoryOrderLinks)), &ldrEntry, sizeof(ldrEntry), &readlen);
+		if (!NT_SUCCESS(status)) {
+			std::cerr << "GetModuleList::ZwReadVirtualMemory error" << std::endl;
+			CloseHandle(hProcess);
+			return 0;
+		}
+
+
+
+		if (ldrEntry.FullDllName.Length > 0 
+			&& reinterpret_cast<PVOID>(ldrEntry.FullDllName.Buffer) != nullptr) {
+			auto buffer = std::make_unique<wchar_t[]>(ldrEntry.FullDllName.Length / sizeof(wchar_t) + 1);
+
+			status = api.ZwReadVirtualMemory(hProcess, 
+				reinterpret_cast<PVOID>(ldrEntry.FullDllName.Buffer), buffer.get(),
+				ldrEntry.FullDllName.Length, &readlen);
+			if (NT_SUCCESS(status)) {
+				buffer[ldrEntry.FullDllName.Length / sizeof(wchar_t)] = L'\0';
+				moduleInfo.m_modulePath = buffer.get();
+			}
+			else {
+				std::cerr << "GetModuleList::ZwReadVirtualMemory error reading string content" << std::endl;
+				moduleInfo.m_modulePath = L"";
+			}
+		}
+		else {
+			moduleInfo.m_modulePath = L"";
+		}
+
+		ProcessManage pm;
+		moduleInfo.m_moduleName = pm.DosPathGetFileName(moduleInfo.m_modulePath);
+		moduleInfo.m_dllBase = reinterpret_cast<PVOID>(ldrEntry.DllBase);
+		moduleInfo.m_imageSize = ldrEntry.SizeOfImage;
 		processInfo.setModuleInfo(moduleInfo);
 		head = ldrEntry.InMemoryOrderLinks;
 	}
