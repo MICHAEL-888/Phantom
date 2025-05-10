@@ -1,11 +1,8 @@
 ﻿  ProcessManage.cpp
-C:\Users\Michael\source\repos\Phantom\ProcessManage.h(112,28): warning C4267: “return”: 从“size_t”转换到“const int”，可能丢失数据
+C:\Users\Michael\source\repos\Phantom\ProcessManage.h(114,28): warning C4267: “return”: 从“size_t”转换到“const int”，可能丢失数据
   (编译源文件“ProcessManage.cpp”)
   
-C:\Users\Michael\source\repos\Phantom\ProcessManage.cpp(622,25): warning C4311: “类型强制转换”: 从“_LIST_ENTRY *”到“ULONG”的指针截断
-C:\Users\Michael\source\repos\Phantom\ProcessManage.cpp(622,25): warning C4302: “类型强制转换”: 从“_LIST_ENTRY *”到“ULONG”截断
-C:\Users\Michael\source\repos\Phantom\ProcessManage.cpp(622,17): warning C4312: “类型强制转换”: 从“unsigned long”转换到更大的“PVOID”
-C:\Users\Michael\source\repos\Phantom\ProcessManage.cpp(654,28): warning C4311: “reinterpret_cast”: 从“PVOID”到“ULONG”的指针截断
-C:\Users\Michael\source\repos\Phantom\ProcessManage.cpp(654,28): warning C4302: “reinterpret_cast”: 从“PVOID”到“ULONG”截断
-C:\Users\Michael\source\repos\Phantom\ProcessManage.cpp(659,1): warning C4715: “ProcessManage::ProcessInfo::InitModuleList”: 不是所有的控件路径都返回值
+C:\Users\Michael\source\repos\Phantom\ProcessManage.cpp(705,28): warning C4311: “reinterpret_cast”: 从“PVOID”到“ULONG”的指针截断
+C:\Users\Michael\source\repos\Phantom\ProcessManage.cpp(705,28): warning C4302: “reinterpret_cast”: 从“PVOID”到“ULONG”截断
+C:\Users\Michael\source\repos\Phantom\ProcessManage.cpp(710,1): warning C4715: “ProcessManage::ProcessInfo::InitModuleList”: 不是所有的控件路径都返回值
   Phantom_ARK.vcxproj -> C:\Users\Michael\source\repos\Phantom\ARM64\Debug\Phantom_ARK.exe

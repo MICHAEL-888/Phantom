@@ -27,6 +27,7 @@ public:
 		std::wstring m_parrentProcessName{};
 		LARGE_INTEGER m_createTime{};	// 功能待完善
 		PPEB m_peb{}; // peb结构中可检测进程调试信息，可获取进程加载模块列表，peb在目标进程当中
+		PPEB m_peb32{};
 		BYTE m_isDebugged{};	// peb要读进程，后续完善
 		std::vector<std::wstring> m_module{};	//同样需要读peb，后续完善
 		bool m_isCritical{};
@@ -84,6 +85,7 @@ private:
 	void InitProcessList();
 	void InitProcessPath();
 	void InitProcessPeb();
+	void InitProcessPeb32();
 	std::wstring DosPathGetFileName(const std::wstring& path);
 	void ListNtPathToDos();
 	std::wstring PidToDosPath(const ULONG pid);

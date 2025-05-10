@@ -160,7 +160,59 @@ void ProcessManage::InitProcessPeb() {
 		}
 
 		ULONG bufferSize{};
-		PROCESS_BASIC_INFORMATION buffer = {0};
+		PVOID buffer = {0};
+
+
+		HANDLE hProcess;
+		OBJECT_ATTRIBUTES ObjectAttributes;
+		InitializeObjectAttributes(&ObjectAttributes, NULL, NULL, NULL, NULL);
+		CLIENT_ID clientID = { 0 };
+		clientID.UniqueProcess = ULongToHandle(m_processList[i].getPid());
+		NTSTATUS status =
+			api.ZwOpenProcess(&hProcess, PROCESS_QUERY_LIMITED_INFORMATION,
+				&ObjectAttributes, &clientID);
+
+		if (!NT_SUCCESS(status)) {
+			std::cerr << "ProcessManage::InitProcessPeb \"Failed to open process\""
+				<< std::endl;
+			continue;
+		}
+
+		bufferSize = sizeof(buffer);
+		//memset(&readBuffer, 0, bufferSize);
+
+		status = api.ZwQueryInformationProcess(hProcess, ProcessWow64Information,
+			&buffer, bufferSize, nullptr);
+		if (!NT_SUCCESS(status)) {
+			std::cerr << "ProcessManage::InitProcessPeb \"Failed to query process "
+				"information\""
+				<< std::endl;
+			continue;
+		}
+
+
+		/*PROCESS_BASIC_INFORMATION newProcessInfo = buffer;
+		if (newProcessInfo.PebBaseAddress) {
+			m_processList[i].setPeb(newProcessInfo.PebBaseAddress);
+		}*/
+		CloseHandle(hProcess);
+	}
+
+	return;
+}
+
+void ProcessManage::InitProcessPeb32() {
+	for (int i = 0; i < m_processList.size(); i++) {
+		if (m_processList[i].getProcessName() == L"Registry" && m_processList[i].getPid() <= 200) {
+			continue;
+		}
+
+		if (m_processList[i].getProcessName() == L"Memory Compression") {
+			continue;
+		}
+
+		ULONG bufferSize{};
+		PROCESS_BASIC_INFORMATION buffer = { 0 };
 
 		HANDLE hProcess;
 		OBJECT_ATTRIBUTES ObjectAttributes;
