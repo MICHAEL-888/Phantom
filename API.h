@@ -80,6 +80,25 @@ typedef NTSTATUS(NTAPI* hZwDuplicateToken)(HANDLE ExistingTokenHandle,
 typedef NTSTATUS (NTAPI* hZwReadVirtualMemory)(HANDLE ProcessHandle, PVOID BaseAddress, PVOID Buffer,
 	SIZE_T NumberOfBytesToRead, PSIZE_T NumberOfBytesRead);
 
+typedef NTSTATUS(NTAPI* hZwTerminateProcess)(HANDLE ProcessHandle, NTSTATUS ExitStatus);
+
+typedef _Function_class_(PS_APC_ROUTINE)
+VOID NTAPI PS_APC_ROUTINE(
+	PVOID ApcArgument1,
+	PVOID ApcArgument2,
+	PVOID ApcArgument3
+);
+
+typedef PS_APC_ROUTINE* PPS_APC_ROUTINE;
+
+typedef NTSTATUS(NTAPI* hNtQueueApcThreadEx)(
+	HANDLE ThreadHandle,                        //需要插入的线程句柄
+	HANDLE flag,                                //0：用户普通APC  1：用户特殊APC  其余值也为普通APC
+	PPS_APC_ROUTINE ApcRoutine,                        //需要执行的APC函数指针
+	PVOID NormalContext,                //需要执行的APC函数的第零个参数
+	PVOID SystemArgument1,        //需要执行的APC函数的第一个参数
+	PVOID SystemArgument2);        //需要执行的APC函数的第二个参数
+
 class API {
 public:
 	API();
@@ -118,6 +137,17 @@ public:
 	NTSTATUS ZwReadVirtualMemory(HANDLE ProcessHandle, PVOID BaseAddress, PVOID Buffer,
 		SIZE_T NumberOfBytesToRead, PSIZE_T NumberOfBytesRead);
 
+	NTSTATUS ZwTerminateProcess(HANDLE ProcessHandle, NTSTATUS ExitStatus);
+
+	NTSTATUS NtQueueApcThreadEx(
+		HANDLE ThreadHandle,
+		HANDLE ReserveHandle,
+		PPS_APC_ROUTINE ApcRoutine,
+		PVOID ApcArgument1,
+		PVOID ApcArgument2,
+		PVOID ApcArgument3
+	);
+
 private:
 	HMODULE m_hNtDll;
 
@@ -127,4 +157,6 @@ private:
 	hZwOpenProcessToken m_ZwOpenProcessToken;
 	hZwDuplicateToken m_ZwDuplicateToken;
 	hZwReadVirtualMemory m_ZwReadVirtualMemory;
+	hZwTerminateProcess m_ZwTerminateProcess;
+	hNtQueueApcThreadEx m_NtQueueApcThreadEx;
 };

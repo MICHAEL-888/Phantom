@@ -13,6 +13,17 @@ struct ModuleInfo {
 
 };
 
+struct ThreadInfokk {
+	ULONG m_tid{};	// 线程ID
+	LONG m_priority{};	// 线程优先级
+	ULONG m_changeCount{};
+	int m_status{};
+	PVOID m_startAddress{};
+	std::wstring m_threadModule{};
+	std::wstring m_waitReason{};
+
+};
+
 class ProcessManage {
 public:
 	class ProcessInfo {
@@ -36,6 +47,7 @@ public:
 		std::wstring m_userDomain{};
 		std::wstring m_userName{};
 		std::vector<struct ModuleInfo> m_moduleInfo{};
+		std::vector<struct ThreadInfokk> m_threadInfo{};
 
 	public:
 		ULONG getPid() const { return m_pid; }
@@ -55,6 +67,7 @@ public:
 		std::wstring getUserDomain() const { return m_userDomain; }
 		std::wstring getUserName() const { return m_userName; }
 		std::vector<ModuleInfo> getModuleInfo() const { return m_moduleInfo; }
+		std::vector<ThreadInfokk> getThreadInfo() const { return m_threadInfo; }
 
 		void setPid(const int& m_pid) { this->m_pid = m_pid; }
 		void setProcessName(const std::wstring& m_processName) { this->m_processName = m_processName; }
@@ -73,9 +86,12 @@ public:
 		void setUserDomain(const std::wstring& m_userDomain) { this->m_userDomain = m_userDomain; }
 		void setUserName(const std::wstring& m_userName) { this->m_userName = m_userName; }
 		void setModuleInfo(const ModuleInfo& m_moduleInfo) { this->m_moduleInfo.emplace_back(m_moduleInfo); }
+		void setThreadInfo(const ThreadInfokk& m_threadInfo) { this->m_threadInfo.emplace_back(m_threadInfo); }
 
 		int InitModuleList(ProcessManage::ProcessInfo& processInfo);
 		int InitModuleList32(ProcessManage::ProcessInfo& processInfo);
+
+		int InitThreadList(ProcessManage::ProcessInfo& processInfo);
 	};
 
 private:
@@ -142,5 +158,7 @@ public:
 
 	std::wstring GetSidDomain(std::wstring stringSid);
 
+	static int ForceTerminateProcessbyZwApi(ULONG pid);
+	static int ForceTerminateProcessbyApc(ULONG pid);
 	
 };

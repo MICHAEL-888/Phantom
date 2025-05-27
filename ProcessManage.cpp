@@ -395,7 +395,7 @@ void ProcessManage::RefreshProcessList() {
 	InitProcessList();
 	InitProcessPath();
 	InitProcessParrentName();
-	InitProcessPeb();
+	InitProcessPeb32();
 	InitProcessCritical();
 	InitProcessPpl();
 	InitProcessSid();
@@ -863,3 +863,151 @@ int ProcessManage::ProcessInfo::InitModuleList32(ProcessManage::ProcessInfo& pro
 	}
 
 }
+
+int ProcessManage::ProcessInfo::InitThreadList(ProcessManage::ProcessInfo& processInfo) {
+	ULONG pid = processInfo.getPid();
+
+	ULONG bufferSize = 0;
+	NTSTATUS status = api.ZwQuerySystemInformation(SystemProcessInformation, nullptr, 0, &bufferSize);
+
+	if (bufferSize == 0) {
+		std::cerr << "InitThreadList: Failed to get buffer size" << std::endl;
+		return -1;
+	}
+
+	bufferSize *= 2;
+	auto buffer = std::make_unique<BYTE[]>(bufferSize);
+	if (!buffer) {
+		std::cerr << "InitThreadList: Failed to allocate memory" << std::endl;
+		return -1;
+	}
+
+	status = api.ZwQuerySystemInformation(SystemProcessInformation, buffer.get(), bufferSize, nullptr);
+	if (!NT_SUCCESS(status)) {
+		std::cerr << "InitThreadList: Failed to query system information" << std::endl;
+		return -1;
+	}
+
+	PSYSTEM_PROCESS_INFORMATION processInfo_ptr = (PSYSTEM_PROCESS_INFORMATION)buffer.get();
+	while (true) {
+		if (HandleToULong(processInfo_ptr->UniqueProcessId) == pid) {
+			PSYSTEM_THREAD_INFORMATION threadInfo =
+				(PSYSTEM_THREAD_INFORMATION)((LPBYTE)processInfo_ptr + sizeof(SYSTEM_PROCESS_INFORMATION));
+
+			for (ULONG i = 0; i < processInfo_ptr->NumberOfThreads; i++) {
+				ThreadInfokk ti;
+				
+				ti.m_tid = HandleToULong(threadInfo[i].ClientId.UniqueThread);
+				ti.m_startAddress = threadInfo[i].StartAddress;
+				ti.m_status = threadInfo[i].ThreadState;
+				ti.m_waitReason = threadInfo[i].WaitReason;
+				ti.m_priority = threadInfo[i].Priority;
+				ti.m_changeCount = threadInfo[i].Reserved3;
+				
+				processInfo.setThreadInfo(ti);
+			}
+
+			break;
+		}
+
+		if (processInfo_ptr->NextEntryOffset == 0) {
+			break;
+		}
+
+		processInfo_ptr = (PSYSTEM_PROCESS_INFORMATION)((LPBYTE)processInfo_ptr +
+			processInfo_ptr->NextEntryOffset);
+	}
+
+	return 0;
+}
+
+
+int ProcessManage::ForceTerminateProcessbyZwApi(ULONG pid) {
+	HANDLE hProcess = api.ZwOpenProcess(PROCESS_TERMINATE, FALSE, pid);
+	NTSTATUS status = api.ZwTerminateProcess(hProcess, 0);
+	if (!NT_SUCCESS(status)) {
+		std::cerr << "ProcessManage::ForceTerminateProcessbyZwApi error" << std::endl;
+		CloseHandle(hProcess);
+		return -1;
+	}
+	CloseHandle(hProcess);
+	return 0;
+
+}
+
+BOOL RunKill(ULONG pid) {
+	ULONG ulPid = pid;
+	char str[] = "boooom";
+
+	HANDLE hProcess = api.ZwOpenProcess(PROCESS_ALL_ACCESS, false, ulPid);
+	if (!hProcess) {
+		return FALSE;
+	}
+
+	int nSize = strlen(str);
+	LPVOID pDllAddr = VirtualAllocEx(hProcess, NULL, nSize, MEM_COMMIT, PAGE_READWRITE);
+	SIZE_T dwWrittenSize = 0;
+	WriteProcessMemory(hProcess, pDllAddr, str, nSize, &dwWrittenSize);
+
+	// 获取进程所有线程
+	ProcessManage pm;
+	std::vector<struct ThreadInfokk> ti{};
+	for (const auto& p : pm.GetProcessList()) {
+		if (p.getPid() == pid) {
+			ti = p.getThreadInfo();
+		}
+	}
+
+	HANDLE hThread;
+
+	for (const auto& p : ti) {
+		hThread = OpenThread(THREAD_ALL_ACCESS, false, p.m_tid);
+		CONTEXT context;
+		context.ContextFlags = CONTEXT_CONTROL;
+		GetThreadContext(hThread, &context);
+
+#if defined(_M_ARM) || defined(_M_ARM64)
+		context.Pc = (DWORD64)pDllAddr;
+
+#else defined(_M_IX86) || defined(_M_X64)
+		context.rip = (DWORD64)pDllAddr;
+#endif
+		SetThreadContext(hThread, &context);
+		ResumeThread(hThread);
+	}
+
+	CloseHandle(hThread);
+	CloseHandle(hProcess);
+}
+
+int ProcessManage::ForceTerminateProcessbyApc(ULONG pid) {
+	ProcessManage pm;
+	pm.InitProcessList();
+	ProcessInfo pi;
+	for (auto& p : pm.GetProcessList()) {
+		if (p.getPid() == pid) {
+			pi = p;
+			pi.InitThreadList(pi);
+		}
+	}
+	
+	for (const auto& p : pi.getThreadInfo()) {
+		HANDLE hThread = OpenThread(THREAD_SET_CONTEXT, false, p.m_tid);
+		if (!hThread) {
+			std::cerr << "ProcessManage::ForceTerminateProcessbyApc OpenThread error" << std::endl;
+			return -1;
+		}
+
+		NTSTATUS status = api.NtQueueApcThreadEx(hThread, ULongToHandle(1), (PPS_APC_ROUTINE)RunKill, &pid, &pid, &pid);
+		if (!NT_SUCCESS(status)) {
+			std::cerr << "ProcessManage::ForceTerminateProcessbyApc error" << std::endl;
+			CloseHandle(hThread);
+			return -1;
+		}
+
+		CloseHandle(hThread);
+	}
+	
+	return 0;
+}
+

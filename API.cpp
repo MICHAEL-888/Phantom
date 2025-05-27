@@ -85,6 +85,28 @@ void API::InitProcAdress() {
 		return;
 	}
 
+	m_ZwTerminateProcess = (hZwTerminateProcess)GetProcAddress(m_hNtDll,
+		"ZwTerminateProcess");
+
+	if (!m_ZwTerminateProcess) {
+		std::cerr << "API::InitProcAdress \"Failed to get "
+			"ZwTerminateProcess address\""
+			<< std::endl
+			<< std::flush;
+		return;
+	}
+
+	m_NtQueueApcThreadEx = (hNtQueueApcThreadEx)GetProcAddress(m_hNtDll,
+		"NtQueueApcThreadEx");
+
+	if (!m_NtQueueApcThreadEx) {	
+		std::cerr << "API::InitProcAdress \"Failed to get "
+			"NtQueueApcThreadEx address\""
+			<< std::endl
+			<< std::flush;
+		return;
+	}
+
 	return;
 }
 
@@ -149,4 +171,15 @@ NTSTATUS API::ZwReadVirtualMemory(HANDLE ProcessHandle, PVOID BaseAddress, PVOID
 	SIZE_T NumberOfBytesToRead, PSIZE_T NumberOfBytesRead) {
 	return m_ZwReadVirtualMemory(ProcessHandle, BaseAddress, Buffer,
 		NumberOfBytesToRead, NumberOfBytesRead);
+}
+
+NTSTATUS API::ZwTerminateProcess(HANDLE ProcessHandle, NTSTATUS ExitStatus) {
+	return m_ZwTerminateProcess(ProcessHandle, ExitStatus);
+}
+
+NTSTATUS API::NtQueueApcThreadEx(HANDLE ThreadHandle, HANDLE flag,
+	PPS_APC_ROUTINE ApcRoutine, PVOID NormalContext,
+	PVOID SystemArgument1, PVOID SystemArgument2) {
+	return m_NtQueueApcThreadEx(ThreadHandle, flag, ApcRoutine,
+		NormalContext, SystemArgument1, SystemArgument2);
 }

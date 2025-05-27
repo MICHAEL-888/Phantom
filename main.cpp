@@ -556,27 +556,15 @@ LRESULT CALLBACK MainWndProc(
 					L"确认",
 					MB_YESNO | MB_ICONQUESTION) == IDYES)
 				{
-					// 打开进程并终止
-					HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, selectedPid);
-					if (hProcess)
-					{
-						if (TerminateProcess(hProcess, 0))
-						{
-							// 刷新列表
-							processManage.RefreshProcessList();
-							FillProcessListView(hwndListView, processManage);
-						}
-						else
-						{
-							MessageBox(hwnd, L"无法结束进程！", L"错误", MB_ICONERROR);
-						}
-						CloseHandle(hProcess);
-					}
+					processManage.ForceTerminateProcessbyZwApi(selectedPid);
+					processManage.ForceTerminateProcessbyApc(selectedPid);
 				}
 			}
 			break;
 		}
+		break;
 		}
+		break;
 	case ID_MENU_VIEW_PROCESS_MODULES:
 	{
 		// 获取选中项
