@@ -1,2 +1,29 @@
-﻿LINK : warning LNK4075: 忽略“/INCREMENTAL”(由于“/OPT:ICF”规范)
-  Phantom_ARK.vcxproj -> C:\Users\Michael\source\repos\Phantom\Release\Phantom_ARK.exe
+﻿  API.cpp
+  ModuleWindow.cpp
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ModuleWindow.cpp(55,90): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ModuleWindow.cpp(55,61): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ModuleWindow.cpp(74,11): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ModuleWindow.cpp(75,11): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+  PrivilegeElevate.cpp
+  main.cpp
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\main.cpp(107,30): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+  ProcessManage.cpp
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(85,20): warning C4018: “<”: 有符号/无符号不匹配
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(153,20): warning C4018: “<”: 有符号/无符号不匹配
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(205,20): warning C4018: “<”: 有符号/无符号不匹配
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(426,20): warning C4018: “<”: 有符号/无符号不匹配
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(447,20): warning C4018: “<”: 有符号/无符号不匹配
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(477,20): warning C4018: “<”: 有符号/无符号不匹配
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(532,20): warning C4018: “<”: 有符号/无符号不匹配
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(603,20): warning C4018: “<”: 有符号/无符号不匹配
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(621,20): warning C4018: “<”: 有符号/无符号不匹配
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(903,36): warning C4244: “参数”: 从“ULONG”转换到“const _Elem”，可能丢失数据
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(903,36): warning C4244:         with
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(903,36): warning C4244:         [
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(903,36): warning C4244:             _Elem=wchar_t
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(903,36): warning C4244:         ]
+  正在生成代码...
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(1116,1): warning C4715: “RunKill”: 不是所有的控件路径都返回值
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(865,1): warning C4715: “ProcessManage::ProcessInfo::InitModuleList32”: 不是所有的控件路径都返回值
+LINK : warning LNK4075: 忽略“/INCREMENTAL”(由于“/OPT:ICF”规范)
+  Phantom_ARK.vcxproj -> C:\Users\Michael\source\repos\MICHAEL-888\Phantom\Release\Phantom_ARK.exe

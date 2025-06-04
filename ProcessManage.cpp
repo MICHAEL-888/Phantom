@@ -962,17 +962,152 @@ BOOL RunKill(ULONG pid) {
 
 	for (const auto& p : ti) {
 		hThread = OpenThread(THREAD_ALL_ACCESS, false, p.m_tid);
+
+#if defined(_M_ARM64)
 		CONTEXT context;
 		context.ContextFlags = CONTEXT_CONTROL;
 		GetThreadContext(hThread, &context);
-
-#if defined(_M_ARM) || defined(_M_ARM64)
 		context.Pc = (DWORD64)pDllAddr;
 
-#else defined(_M_IX86) || defined(_M_X64)
-		context.rip = (DWORD64)pDllAddr;
+#elif defined(_M_X64)
+		typedef struct DECLSPEC_ALIGN(16) _CONTEXT {
+			DWORD64 P1Home;          /* 000 */
+			DWORD64 P2Home;          /* 008 */
+			DWORD64 P3Home;          /* 010 */
+			DWORD64 P4Home;          /* 018 */
+			DWORD64 P5Home;          /* 020 */
+			DWORD64 P6Home;          /* 028 */
+
+			/* Control flags */
+			DWORD ContextFlags;      /* 030 */
+			DWORD MxCsr;             /* 034 */
+
+			/* Segment */
+			WORD SegCs;              /* 038 */
+			WORD SegDs;              /* 03a */
+			WORD SegEs;              /* 03c */
+			WORD SegFs;              /* 03e */
+			WORD SegGs;              /* 040 */
+			WORD SegSs;              /* 042 */
+			DWORD EFlags;            /* 044 */
+
+			/* Debug */
+			DWORD64 Dr0;             /* 048 */
+			DWORD64 Dr1;             /* 050 */
+			DWORD64 Dr2;             /* 058 */
+			DWORD64 Dr3;             /* 060 */
+			DWORD64 Dr6;             /* 068 */
+			DWORD64 Dr7;             /* 070 */
+
+			/* Integer */
+			DWORD64 Rax;             /* 078 */
+			DWORD64 Rcx;             /* 080 */
+			DWORD64 Rdx;             /* 088 */
+			DWORD64 Rbx;             /* 090 */
+			DWORD64 Rsp;             /* 098 */
+			DWORD64 Rbp;             /* 0a0 */
+			DWORD64 Rsi;             /* 0a8 */
+			DWORD64 Rdi;             /* 0b0 */
+			DWORD64 R8;              /* 0b8 */
+			DWORD64 R9;              /* 0c0 */
+			DWORD64 R10;             /* 0c8 */
+			DWORD64 R11;             /* 0d0 */
+			DWORD64 R12;             /* 0d8 */
+			DWORD64 R13;             /* 0e0 */
+			DWORD64 R14;             /* 0e8 */
+			DWORD64 R15;             /* 0f0 */
+
+			/* Counter */
+			DWORD64 Rip;             /* 0f8 */
+
+			/* Floating point */
+			union {
+				XMM_SAVE_AREA32 FltSave;  /* 100 */
+				struct {
+					M128A Header[2];      /* 100 */
+					M128A Legacy[8];      /* 120 */
+					M128A Xmm0;           /* 1a0 */
+					M128A Xmm1;           /* 1b0 */
+					M128A Xmm2;           /* 1c0 */
+					M128A Xmm3;           /* 1d0 */
+					M128A Xmm4;           /* 1e0 */
+					M128A Xmm5;           /* 1f0 */
+					M128A Xmm6;           /* 200 */
+					M128A Xmm7;           /* 210 */
+					M128A Xmm8;           /* 220 */
+					M128A Xmm9;           /* 230 */
+					M128A Xmm10;          /* 240 */
+					M128A Xmm11;          /* 250 */
+					M128A Xmm12;          /* 260 */
+					M128A Xmm13;          /* 270 */
+					M128A Xmm14;          /* 280 */
+					M128A Xmm15;          /* 290 */
+				} DUMMYSTRUCTNAME;
+			} DUMMYUNIONNAME;
+
+			/* Vector */
+			M128A VectorRegister[26];     /* 300 */
+			DWORD64 VectorControl;        /* 4a0 */
+
+			/* Debug control */
+			DWORD64 DebugControl;         /* 4a8 */
+			DWORD64 LastBranchToRip;      /* 4b0 */
+			DWORD64 LastBranchFromRip;    /* 4b8 */
+			DWORD64 LastExceptionToRip;   /* 4c0 */
+			DWORD64 LastExceptionFromRip; /* 4c8 */
+		} CONTEXT;
+
+		CONTEXT context;
+		context.ContextFlags = CONTEXT_CONTROL;
+		GetThreadContext(hThread, reinterpret_cast<LPCONTEXT>(&context));
+		context.Rip = (DWORD64)pDllAddr;
+#else defined(_M_IX86)
+		typedef struct _CONTEXT
+		{
+			DWORD   ContextFlags;
+
+			/* These are selected by CONTEXT_DEBUG_REGISTERS */
+			DWORD   Dr0;
+			DWORD   Dr1;
+			DWORD   Dr2;
+			DWORD   Dr3;
+			DWORD   Dr6;
+			DWORD   Dr7;
+
+			/* These are selected by CONTEXT_FLOATING_POINT */
+			FLOATING_SAVE_AREA FloatSave;
+
+			/* These are selected by CONTEXT_SEGMENTS */
+			DWORD   SegGs;
+			DWORD   SegFs;
+			DWORD   SegEs;
+			DWORD   SegDs;
+
+			/* These are selected by CONTEXT_INTEGER */
+			DWORD   Edi;
+			DWORD   Esi;
+			DWORD   Ebx;
+			DWORD   Edx;
+			DWORD   Ecx;
+			DWORD   Eax;
+
+			/* These are selected by CONTEXT_CONTROL */
+			DWORD   Ebp;
+			DWORD   Eip;
+			DWORD   SegCs;
+			DWORD   EFlags;
+			DWORD   Esp;
+			DWORD   SegSs;
+
+			BYTE    ExtendedRegisters[MAXIMUM_SUPPORTED_EXTENSION];
+		} CONTEXT;
+
+		CONTEXT context;
+		context.ContextFlags = CONTEXT_CONTROL;
+		GetThreadContext(hThread, reinterpret_cast<LPCONTEXT>(&context));
+		context.Eip = (DWORD)pDllAddr;
 #endif
-		SetThreadContext(hThread, &context);
+        SetThreadContext(hThread, reinterpret_cast<PCONTEXT>(&context));
 		ResumeThread(hThread);
 	}
 

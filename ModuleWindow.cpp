@@ -153,7 +153,7 @@ LRESULT CALLBACK ModuleWndProc(
             CLIP_DEFAULT_PRECIS,       // 裁剪精度
             CLEARTYPE_QUALITY,         // 输出质量
             DEFAULT_PITCH | FF_DONTCARE,  // 字体间距和族
-            L"Segoe UI Variable Display");           // 字体名称
+            0);           // 字体名称
 
         // 获取客户区矩形
         RECT rcClient;
@@ -185,32 +185,32 @@ LRESULT CALLBACK ModuleWndProc(
         // 设置列标题
         LVCOLUMN lvColumn;
         lvColumn.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM | LVCF_FMT;
-        lvColumn.cx = 300;
+        lvColumn.cx = 150 * GetDPI() / 100;
         lvColumn.fmt = LVCFMT_LEFT;
         lvColumn.pszText = L"模块名称";
         ListView_InsertColumn(hwndListView, 0, &lvColumn);
 
-        lvColumn.cx = 220;
+        lvColumn.cx = 110 * GetDPI() / 100;
         lvColumn.fmt = LVCFMT_LEFT;
         lvColumn.pszText = L"模块基址";
         ListView_InsertColumn(hwndListView, 1, &lvColumn);
 
-        lvColumn.cx = 150;
+        lvColumn.cx = 75 * GetDPI() / 100;
         lvColumn.fmt = LVCFMT_LEFT;
         lvColumn.pszText = L"模块大小";
         ListView_InsertColumn(hwndListView, 2, &lvColumn);
 
-        lvColumn.cx = 600;
+        lvColumn.cx = 300 * GetDPI() / 100;
         lvColumn.fmt = LVCFMT_LEFT;
         lvColumn.pszText = L"模块路径";
         ListView_InsertColumn(hwndListView, 3, &lvColumn);
 
-        lvColumn.cx = 200;
+        lvColumn.cx = 100 * GetDPI() / 100;
         lvColumn.fmt = LVCFMT_LEFT;
         lvColumn.pszText = L"文件厂商";
         ListView_InsertColumn(hwndListView, 4, &lvColumn);
 
-        lvColumn.cx = 300;
+        lvColumn.cx = 150 * GetDPI() / 100;
         lvColumn.fmt = LVCFMT_LEFT;
         lvColumn.pszText = L"文件描述";
         ListView_InsertColumn(hwndListView, 5, &lvColumn);

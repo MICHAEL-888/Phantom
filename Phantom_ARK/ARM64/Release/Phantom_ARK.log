@@ -1,29 +1,39 @@
 ﻿  API.cpp
   ModuleWindow.cpp
-C:\Users\Michael\source\repos\Phantom\ProcessManage.h(101,28): warning C4267: “return”: 从“size_t”转换到“const int”，可能丢失数据
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.h(131,28): warning C4267: “return”: 从“size_t”转换到“const int”，可能丢失数据
   (编译源文件“ModuleWindow.cpp”)
   
-C:\Users\Michael\source\repos\Phantom\ModuleWindow.cpp(52,90): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
-C:\Users\Michael\source\repos\Phantom\ModuleWindow.cpp(52,61): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
-C:\Users\Michael\source\repos\Phantom\ModuleWindow.cpp(71,11): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
-C:\Users\Michael\source\repos\Phantom\ModuleWindow.cpp(72,11): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
-C:\Users\Michael\source\repos\Phantom\ModuleWindow.cpp(303,26): warning C4311: “类型强制转换”: 从“PPEB_LDR_DATA”到“ULONG”的指针截断
-C:\Users\Michael\source\repos\Phantom\ModuleWindow.cpp(303,26): warning C4302: “类型强制转换”: 从“PPEB_LDR_DATA”到“ULONG”截断
-C:\Users\Michael\source\repos\Phantom\ModuleWindow.cpp(303,12): warning C4312: “类型强制转换”: 从“unsigned long”转换到更大的“LIST_ENTRY *”
-C:\Users\Michael\source\repos\Phantom\ModuleWindow.cpp(307,54): warning C4311: “类型强制转换”: 从“_LIST_ENTRY *”到“ULONG”的指针截断
-C:\Users\Michael\source\repos\Phantom\ModuleWindow.cpp(307,54): warning C4302: “类型强制转换”: 从“_LIST_ENTRY *”到“ULONG”截断
-C:\Users\Michael\source\repos\Phantom\ModuleWindow.cpp(307,46): warning C4312: “类型强制转换”: 从“unsigned long”转换到更大的“PVOID”
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ModuleWindow.cpp(55,90): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ModuleWindow.cpp(55,61): warning C4244: “参数”: 从“double”转换到“int”，可能丢失数据
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ModuleWindow.cpp(74,11): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ModuleWindow.cpp(75,11): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
   PrivilegeElevate.cpp
   main.cpp
-C:\Users\Michael\source\repos\Phantom\ProcessManage.h(101,28): warning C4267: “return”: 从“size_t”转换到“const int”，可能丢失数据
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.h(131,28): warning C4267: “return”: 从“size_t”转换到“const int”，可能丢失数据
   (编译源文件“main.cpp”)
   
-C:\Users\Michael\source\repos\Phantom\main.cpp(107,30): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\main.cpp(107,30): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
   ProcessManage.cpp
-C:\Users\Michael\source\repos\Phantom\ProcessManage.h(101,28): warning C4267: “return”: 从“size_t”转换到“const int”，可能丢失数据
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.h(131,28): warning C4267: “return”: 从“size_t”转换到“const int”，可能丢失数据
   (编译源文件“ProcessManage.cpp”)
   
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(771,28): warning C4311: “reinterpret_cast”: 从“PVOID”到“ULONG”的指针截断
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(771,28): warning C4302: “reinterpret_cast”: 从“PVOID”到“ULONG”截断
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(811,45): warning C4312: “reinterpret_cast”: 从“ULONG”转换到更大的“PVOID”
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(822,9): warning C4312: “类型强制转换”: 从“unsigned long”转换到更大的“LIST_ENTRY32 *”
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(824,9): warning C4312: “reinterpret_cast”: 从“DWORD”转换到更大的“PVOID”
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(828,46): warning C4312: “类型强制转换”: 从“unsigned long”转换到更大的“PVOID”
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(838,7): warning C4312: “reinterpret_cast”: 从“ULONG”转换到更大的“PVOID”
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(842,5): warning C4312: “reinterpret_cast”: 从“ULONG”转换到更大的“PVOID”
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(859,26): warning C4312: “reinterpret_cast”: 从“ULONG”转换到更大的“PVOID”
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(903,36): warning C4244: “参数”: 从“ULONG”转换到“const _Elem”，可能丢失数据
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(903,36): warning C4244:         with
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(903,36): warning C4244:         [
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(903,36): warning C4244:             _Elem=wchar_t
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(903,36): warning C4244:         ]
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(947,12): warning C4267: “初始化”: 从“size_t”转换到“int”，可能丢失数据
   正在生成代码...
-C:\Users\Michael\source\repos\Phantom\ModuleWindow.cpp(319,1): warning C4715: “GetModuleList”: 不是所有的控件路径都返回值
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(1116,1): warning C4715: “RunKill”: 不是所有的控件路径都返回值
+C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ProcessManage.cpp(865,1): warning C4715: “ProcessManage::ProcessInfo::InitModuleList32”: 不是所有的控件路径都返回值
 LINK : warning LNK4075: 忽略“/INCREMENTAL”(由于“/OPT:ICF”规范)
-  Phantom_ARK.vcxproj -> C:\Users\Michael\source\repos\Phantom\ARM64\Release\Phantom_ARK.exe
+  Phantom_ARK.vcxproj -> C:\Users\Michael\source\repos\MICHAEL-888\Phantom\ARM64\Release\Phantom_ARK.exe

@@ -115,8 +115,8 @@ void FillProcessListView(HWND hwndListView, const ProcessManage& processManager)
 	// 禁用重绘
 	SendMessage(hwndListView, WM_SETREDRAW, FALSE, 0);
 
-    // 清空列表视图
-    ListView_DeleteAllItems(hwndListView);
+	// 清空列表视图
+	ListView_DeleteAllItems(hwndListView);
 
 	// 获取进程列表
 	const auto& processList = processManager.GetProcessList();
@@ -127,85 +127,85 @@ void FillProcessListView(HWND hwndListView, const ProcessManage& processManager)
 		LVITEM lvItem;
 		ZeroMemory(&lvItem, sizeof(lvItem));
 
-        // 设置第一列（进程名称）
-        lvItem.mask = LVIF_TEXT | LVIF_PARAM;
-        lvItem.iItem = static_cast<int>(i);
-        lvItem.iSubItem = 0;
+		// 设置第一列（进程名称）
+		lvItem.mask = LVIF_TEXT | LVIF_PARAM;
+		lvItem.iItem = static_cast<int>(i);
+		lvItem.iSubItem = 0;
 		std::wstring wstr1 = processList[i].getProcessName();
 		lvItem.pszText = const_cast<LPWSTR>(wstr1.c_str());
-        lvItem.lParam = processList[i].getPid(); // 存储PID，以便以后引用
+		lvItem.lParam = processList[i].getPid(); // 存储PID，以便以后引用
 
 		// 插入列表项
 		int index = ListView_InsertItem(hwndListView, &lvItem);
 
-        // 设置第二列（进程ID）
-        std::wstring pidStr = std::to_wstring(processList[i].getPid());
-        ListView_SetItemText(hwndListView, index, 1, const_cast<LPWSTR>(pidStr.c_str()));
+		// 设置第二列（进程ID）
+		std::wstring pidStr = std::to_wstring(processList[i].getPid());
+		ListView_SetItemText(hwndListView, index, 1, const_cast<LPWSTR>(pidStr.c_str()));
 
-        // 设置第三列（进程路径）
+		// 设置第三列（进程路径）
 		std::wstring wstr3 = processList[i].getProcessPath();
-        ListView_SetItemText(hwndListView, index, 2, const_cast<LPWSTR>(wstr3.c_str()));
+		ListView_SetItemText(hwndListView, index, 2, const_cast<LPWSTR>(wstr3.c_str()));
 
-        // 设置第四列（隐藏进程检测）
-        std::wstring isHideStr = processList[i].getIsHide() ? L"true" : L"";
-        ListView_SetItemText(hwndListView, index, 3, const_cast<LPWSTR>(isHideStr.c_str()));
+		// 设置第四列（隐藏进程检测）
+		std::wstring isHideStr = processList[i].getIsHide() ? L"true" : L"";
+		ListView_SetItemText(hwndListView, index, 3, const_cast<LPWSTR>(isHideStr.c_str()));
 
-        // 设置第五列（父进程ID）
-        std::wstring parrentPidStr = std::to_wstring(processList[i].getParrentProcessId());
-        ListView_SetItemText(hwndListView, index, 4, const_cast<LPWSTR>(parrentPidStr.c_str()));
+		// 设置第五列（父进程ID）
+		std::wstring parrentPidStr = std::to_wstring(processList[i].getParrentProcessId());
+		ListView_SetItemText(hwndListView, index, 4, const_cast<LPWSTR>(parrentPidStr.c_str()));
 
-        // 设置第六列（父进程名）
+		// 设置第六列（父进程名）
 		std::wstring wstr6 = processList[i].getParrentProcessName();
-        ListView_SetItemText(hwndListView, index, 5, const_cast<LPWSTR>(wstr6.c_str()));
+		ListView_SetItemText(hwndListView, index, 5, const_cast<LPWSTR>(wstr6.c_str()));
 
-        // 设置第七列（关键进程）
-        std::wstring isCriticalStr = processList[i].getIsCritical() ? L"true" : L"";
-        ListView_SetItemText(hwndListView, index, 6, const_cast<LPWSTR>(isCriticalStr.c_str()));
+		// 设置第七列（关键进程）
+		std::wstring isCriticalStr = processList[i].getIsCritical() ? L"true" : L"";
+		ListView_SetItemText(hwndListView, index, 6, const_cast<LPWSTR>(isCriticalStr.c_str()));
 
-        // 设置第八列（PPL）
-        if ((processList[i].getPpl() & 0b00000111) != 0) {
-            std::wstring type{};
-            std::wstring signer{};
+		// 设置第八列（PPL）
+		if ((processList[i].getPpl() & 0b00000111) != 0) {
+			std::wstring type{};
+			std::wstring signer{};
 
-            if ((processList[i].getPpl() & 0b00000111) == 1)	type = L"Light";
-            else if ((processList[i].getPpl() & 0b00000111) == 2)	type = L"Full";
+			if ((processList[i].getPpl() & 0b00000111) == 1)	type = L"Light";
+			else if ((processList[i].getPpl() & 0b00000111) == 2)	type = L"Full";
 
-            if ((processList[i].getPpl() & 0b11110000) == 0) signer = L"(None)";
-            if ((processList[i].getPpl() & 0b11110000) == 16) signer = L"(Authenticode)";
-            if ((processList[i].getPpl() & 0b11110000) == 32) signer = L"(CodeGen)";
-            if ((processList[i].getPpl() & 0b11110000) == 48) signer = L"(Antimalware)";
-            if ((processList[i].getPpl() & 0b11110000) == 64) signer = L"(Lsa)";
-            if ((processList[i].getPpl() & 0b11110000) == 80) signer = L"(Windows)";
-            if ((processList[i].getPpl() & 0b11110000) == 96) signer = L"(WinTcb)";
-            if ((processList[i].getPpl() & 0b11110000) == 112) signer = L"(WinSystem)";
-            if ((processList[i].getPpl() & 0b11110000) == 128) signer = L"(App)";
-            if ((processList[i].getPpl() & 0b11110000) == 144) signer = L"(Max)";
+			if ((processList[i].getPpl() & 0b11110000) == 0) signer = L"(None)";
+			if ((processList[i].getPpl() & 0b11110000) == 16) signer = L"(Authenticode)";
+			if ((processList[i].getPpl() & 0b11110000) == 32) signer = L"(CodeGen)";
+			if ((processList[i].getPpl() & 0b11110000) == 48) signer = L"(Antimalware)";
+			if ((processList[i].getPpl() & 0b11110000) == 64) signer = L"(Lsa)";
+			if ((processList[i].getPpl() & 0b11110000) == 80) signer = L"(Windows)";
+			if ((processList[i].getPpl() & 0b11110000) == 96) signer = L"(WinTcb)";
+			if ((processList[i].getPpl() & 0b11110000) == 112) signer = L"(WinSystem)";
+			if ((processList[i].getPpl() & 0b11110000) == 128) signer = L"(App)";
+			if ((processList[i].getPpl() & 0b11110000) == 144) signer = L"(Max)";
 
-            std::wstring tmp = type + L" " + signer;
-            ListView_SetItemText(hwndListView, index, 7, const_cast<LPWSTR>(tmp.c_str()));
-        }
+			std::wstring tmp = type + L" " + signer;
+			ListView_SetItemText(hwndListView, index, 7, const_cast<LPWSTR>(tmp.c_str()));
+		}
 
-        // 设置第九列（用户名）
-        if (!processList[i].getUserDomain().empty() && !processList[i].getUserName().empty()) {
-            std::wstring str9 = processList[i].getUserDomain() + L"\\" + processList[i].getUserName();
-            ListView_SetItemText(hwndListView, index, 8, const_cast<LPWSTR>(str9.c_str()));
-        }
-        
-        // 设置第十列（PEB基址）
-        if (processList[i].getPeb() != nullptr) {
-            std::wstringstream wss10;
-            wss10 << L"0x" << std::uppercase << std::hex 
-                << reinterpret_cast<uintptr_t>(processList[i].getPeb());
-            std::wstring str10 = wss10.str();
-            ListView_SetItemText(hwndListView, index, 9, const_cast<LPWSTR>(str10.c_str()));
-        }
-    }
+		// 设置第九列（用户名）
+		if (!processList[i].getUserDomain().empty() && !processList[i].getUserName().empty()) {
+			std::wstring str9 = processList[i].getUserDomain() + L"\\" + processList[i].getUserName();
+			ListView_SetItemText(hwndListView, index, 8, const_cast<LPWSTR>(str9.c_str()));
+		}
 
-    // 开启重绘
-    SendMessage(hwndListView, WM_SETREDRAW, TRUE, 0);
+		// 设置第十列（PEB基址）
+		if (processList[i].getPeb() != nullptr) {
+			std::wstringstream wss10;
+			wss10 << L"0x" << std::uppercase << std::hex
+				<< reinterpret_cast<uintptr_t>(processList[i].getPeb());
+			std::wstring str10 = wss10.str();
+			ListView_SetItemText(hwndListView, index, 9, const_cast<LPWSTR>(str10.c_str()));
+		}
+	}
 
-    // 强制重绘列表视图和表头
-    InvalidateRect(hwndListView, NULL, TRUE);
+	// 开启重绘
+	SendMessage(hwndListView, WM_SETREDRAW, TRUE, 0);
+
+	// 强制重绘列表视图和表头
+	InvalidateRect(hwndListView, NULL, TRUE);
 }
 
 
@@ -339,58 +339,58 @@ LRESULT CALLBACK MainWndProc(
 		// 设置列标题
 		LVCOLUMN lvColumn;
 		lvColumn.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM | LVCF_FMT;
-		lvColumn.cx = 300;
+		lvColumn.cx = 150 * GetDPI() / 100;
 		lvColumn.fmt = LVCFMT_LEFT;
 		lvColumn.pszText = L"进程名称";
 		ListView_InsertColumn(hwndListView, 0, &lvColumn);
 
-		lvColumn.cx = 150;
+		lvColumn.cx = 75 * GetDPI() / 100;
 		lvColumn.fmt = LVCFMT_LEFT;
 		lvColumn.pszText = L"进程ID";
 		ListView_InsertColumn(hwndListView, 1, &lvColumn);
 
-		lvColumn.cx = 600;
+		lvColumn.cx = 300 * GetDPI() / 100;
 		lvColumn.fmt = LVCFMT_LEFT;
 		lvColumn.pszText = L"映像路径";
 		ListView_InsertColumn(hwndListView, 2, &lvColumn);
 
-		lvColumn.cx = 180;
+		lvColumn.cx = 90 * GetDPI() / 100;
 		lvColumn.fmt = LVCFMT_CENTER;  // 设置居中对齐
 		lvColumn.pszText = L"隐藏进程检测";
 		ListView_InsertColumn(hwndListView, 3, &lvColumn);
 
-		lvColumn.cx = 150;
+		lvColumn.cx = 75 * GetDPI() / 100;
 		lvColumn.fmt = LVCFMT_LEFT;
 		lvColumn.pszText = L"父进程ID";
 		ListView_InsertColumn(hwndListView, 4, &lvColumn);
 
-		lvColumn.cx = 300;
+		lvColumn.cx = 150 * GetDPI() / 100;
 		lvColumn.fmt = LVCFMT_LEFT;
 		lvColumn.pszText = L"父进程名";
 		ListView_InsertColumn(hwndListView, 5, &lvColumn);
 
-		lvColumn.cx = 180;
+		lvColumn.cx = 90 * GetDPI() / 100;
 		lvColumn.fmt = LVCFMT_CENTER;  // 设置居中对齐
 		lvColumn.pszText = L"系统关键进程";
 		ListView_InsertColumn(hwndListView, 6, &lvColumn);
 
-		lvColumn.cx = 300;
+		lvColumn.cx = 150 * GetDPI() / 100;
 		lvColumn.fmt = LVCFMT_LEFT;
 		lvColumn.pszText = L"进程保护";
 		ListView_InsertColumn(hwndListView, 7, &lvColumn);
 
-		lvColumn.cx = 350;
+		lvColumn.cx = 175 * GetDPI() / 100;
 		lvColumn.fmt = LVCFMT_LEFT;
 		lvColumn.pszText = L"用户名";
 		ListView_InsertColumn(hwndListView, 8, &lvColumn);
 
-		lvColumn.cx = 300;
+		lvColumn.cx = 150 * GetDPI() / 100;
 		lvColumn.fmt = LVCFMT_LEFT;
 		lvColumn.pszText = L"PEB基址";
 		ListView_InsertColumn(hwndListView, 9, &lvColumn);
 
 		processManage.RefreshProcessList();
-		
+
 		FillProcessListView(hwndListView, processManage);
 
 		hwndElevateButton = CreateWindowEx(
@@ -401,7 +401,7 @@ LRESULT CALLBACK MainWndProc(
 			rcTabClient.right - 100,  // x位置
 			rcTabClient.bottom - 4 - 10,  // y位置
 			200 * GetDPI() / 100,  // 宽度
-			40 * GetDPI() / 100,   // 高度
+			100 * GetDPI() / 100,   // 高度
 			hwnd,
 			(HMENU)BUTTON_ID_1,
 			GetModuleHandle(NULL),
@@ -468,8 +468,8 @@ LRESULT CALLBACK MainWndProc(
 			SetWindowPos(hwndElevateButton, NULL,
 				10,                    // x位置
 				tabHeight + 10,        // y位置
-				400,                   // 宽度
-				200,                    // 高度
+				200 * GetDPI() / 100,                   // 宽度
+				100 * GetDPI() / 100,                    // 高度
 				SWP_NOZORDER);
 		}
 
@@ -528,7 +528,7 @@ LRESULT CALLBACK MainWndProc(
 				}
 				return 0;
 			}
-			break;
+			return 0;
 		case ID_MENU_REFRESH:
 			// 刷新列表
 			processManage.RefreshProcessList();
@@ -537,7 +537,7 @@ LRESULT CALLBACK MainWndProc(
 			statusText = L"进程数量：" + std::to_wstring(processManage.GetProcessCount())
 				+ L"    检测到隐藏进程：" + std::to_wstring(processManage.GetProcessHiddenCount());
 			SendMessage(hwndStatus, SB_SETTEXT, 0, (LPARAM)statusText.c_str());
-			break;
+			return 0;
 		case ID_MENU_TERMINATE_PROCESS:
 		{
 			// 获取选中项
@@ -560,68 +560,64 @@ LRESULT CALLBACK MainWndProc(
 					processManage.ForceTerminateProcessbyApc(selectedPid);
 				}
 			}
-			break;
+			return 0;
 		}
-		break;
-		}
-		break;
-	case ID_MENU_VIEW_PROCESS_MODULES:
-	{
-		// 获取选中项
-		int selectedItem = ListView_GetNextItem(hwndListView, -1, LVNI_SELECTED);
-		if (selectedItem != -1)
+		case ID_MENU_VIEW_PROCESS_MODULES:
 		{
-			LVITEM lvi = { 0 };
-			lvi.mask = LVIF_PARAM;
-			lvi.iItem = selectedItem;
-			ListView_GetItem(hwndListView, &lvi);
-			DWORD selectedPid = (DWORD)lvi.lParam;
+			// 获取选中项
+			int selectedItem = ListView_GetNextItem(hwndListView, -1, LVNI_SELECTED);
+			if (selectedItem != -1)
+			{
+				LVITEM lvi = { 0 };
+				lvi.mask = LVIF_PARAM;
+				lvi.iItem = selectedItem;
+				ListView_GetItem(hwndListView, &lvi);
+				DWORD selectedPid = (DWORD)lvi.lParam;
 
-			// 创建一个ProcessInfo对象的副本而不是引用
-			ProcessManage::ProcessInfo processInfotmp;
-			for (const auto& process : processManage.GetProcessList()) {
-				if (process.getPid() == selectedPid) {
-					processInfotmp = process; // 复制而不是引用
-					break;
+				// 创建一个ProcessInfo对象的副本而不是引用
+				ProcessManage::ProcessInfo processInfotmp;
+				for (const auto& process : processManage.GetProcessList()) {
+					if (process.getPid() == selectedPid) {
+						processInfotmp = process; // 复制而不是引用
+						break;
+					}
+				}
+
+				// 直接传递对象而不是lambda
+				ModuleWindow(hwnd, selectedPid, processInfotmp);
+			}
+
+			return 0;
+		}
+
+		case ID_MENU_PROPERTY:
+		{
+			// 获取选中项
+			int selectedItem = ListView_GetNextItem(hwndListView, -1, LVNI_SELECTED);
+			if (selectedItem != -1)
+			{
+				LVITEM lvi = { 0 };
+				lvi.mask = LVIF_PARAM;
+				lvi.iItem = selectedItem;
+				ListView_GetItem(hwndListView, &lvi);
+				DWORD selectedPid = (DWORD)lvi.lParam;
+
+				// 构建命令行
+				WCHAR cmdLine[MAX_PATH];
+				wsprintfW(cmdLine, L"taskmgr.exe /pid %d", selectedPid);
+
+				// 启动任务管理器并显示属性
+				STARTUPINFO si = { sizeof(si) };
+				PROCESS_INFORMATION pi;
+				if (CreateProcess(NULL, cmdLine, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
+				{
+					CloseHandle(pi.hThread);
+					CloseHandle(pi.hProcess);
 				}
 			}
-
-			// 直接传递对象而不是lambda
-			ModuleWindow(hwnd, selectedPid, processInfotmp);
+			return 0;
 		}
-
-		break;
-	}
-		
-	case ID_MENU_PROPERTY:
-	{
-		// 获取选中项
-		int selectedItem = ListView_GetNextItem(hwndListView, -1, LVNI_SELECTED);
-		if (selectedItem != -1)
-		{
-			LVITEM lvi = { 0 };
-			lvi.mask = LVIF_PARAM;
-			lvi.iItem = selectedItem;
-			ListView_GetItem(hwndListView, &lvi);
-			DWORD selectedPid = (DWORD)lvi.lParam;
-
-			// 构建命令行
-			WCHAR cmdLine[MAX_PATH];
-			wsprintfW(cmdLine, L"taskmgr.exe /pid %d", selectedPid);
-
-			// 启动任务管理器并显示属性
-			STARTUPINFO si = { sizeof(si) };
-			PROCESS_INFORMATION pi;
-			if (CreateProcess(NULL, cmdLine, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
-			{
-				CloseHandle(pi.hThread);
-				CloseHandle(pi.hProcess);
-			}
-		}
-		break;
-	}
-
-
+		}	
 	case WM_CONTEXTMENU:
 	{
 		if ((HWND)wParam == hwndListView)  // 判断是否是列表视图的右键菜单
@@ -645,10 +641,10 @@ LRESULT CALLBACK MainWndProc(
 					AppendMenu(hPopupMenu, MF_STRING, ID_MENU_REFRESH, L"刷新");
 					AppendMenu(hPopupMenu, MF_SEPARATOR, 0, NULL);  // 分隔线
 					AppendMenu(hPopupMenu, MF_STRING, ID_MENU_TERMINATE_PROCESS, L"结束进程");
-					AppendMenu(hPopupMenu, MF_STRING, ID_MENU_TERMINATE_PROCESSTREE, L"结束进程树");
-					AppendMenu(hPopupMenu, MF_SEPARATOR, 0, NULL);  // 分隔线
+					// AppendMenu(hPopupMenu, MF_STRING, ID_MENU_TERMINATE_PROCESSTREE, L"结束进程树");
+					// AppendMenu(hPopupMenu, MF_SEPARATOR, 0, NULL);  // 分隔线
 					AppendMenu(hPopupMenu, MF_STRING, ID_MENU_VIEW_PROCESS_MODULES, L"查看进程模块");
-					AppendMenu(hPopupMenu, MF_STRING, ID_MENU_PROPERTY, L"属性");
+					// AppendMenu(hPopupMenu, MF_STRING, ID_MENU_PROPERTY, L"属性");
 					// 显示菜单
 					TrackPopupMenu(hPopupMenu,
 						TPM_LEFTALIGN | TPM_RIGHTBUTTON,
@@ -663,7 +659,7 @@ LRESULT CALLBACK MainWndProc(
 			}
 			return 0;
 		}
-		break;
+		return 0;
 	}
 	case WM_DESTROY:
 

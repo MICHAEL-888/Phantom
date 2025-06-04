@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
-// Used by Phantom_ARK.rc
+// Used by Phantom_ARK1.rc
 
 // 新对象的下一组默认值
 // 
