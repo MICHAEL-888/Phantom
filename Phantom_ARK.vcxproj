@@ -298,19 +298,26 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\API.cpp" />
+    <ClCompile Include="src\MainWindow.cpp" />
     <ClCompile Include="src\ModuleWindow.cpp" />
     <ClCompile Include="src\PrivilegeElevate.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\ProcessManage.cpp" />
+    <ClCompile Include="src\ProcessPage.cpp" />
+    <ClCompile Include="src\SettingsPage.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\API.h" />
+    <ClInclude Include="include\ListViewEx.h" />
+    <ClInclude Include="include\MainWindow.h" />
     <ClInclude Include="include\ModuleWindow.h" />
     <ClInclude Include="include\PrivilegeElevate.h" />
     <ClInclude Include="include\ProcessManage.h" />
+    <ClInclude Include="include\ProcessPage.h" />
+    <ClInclude Include="include\SettingsPage.h" />
     <ClInclude Include="resources\resource.h" />
   </ItemGroup>
   <ItemGroup>

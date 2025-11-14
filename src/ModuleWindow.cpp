@@ -6,6 +6,7 @@
 #include <string>
 #include "API.h"
 #include <sstream>
+#include <Uxtheme.h>
 
 
 #define LISTVIEW_ID_1 3000
@@ -140,7 +141,7 @@ LRESULT CALLBACK ModuleWndProc(
 
         // 创建字体
         hFont = CreateFontW(
-            19 * GetDPI() / 100,       // 字体高度
+            17 * GetDPI() / 100,       // 字体高度
             0,                         // 字体宽度
             0,                         // 文字角度
             0,                         // 基线角度
@@ -153,7 +154,8 @@ LRESULT CALLBACK ModuleWndProc(
             CLIP_DEFAULT_PRECIS,       // 裁剪精度
             CLEARTYPE_QUALITY,         // 输出质量
             DEFAULT_PITCH | FF_DONTCARE,  // 字体间距和族
-            0);           // 字体名称
+            L"Microsoft YaHei");           // 字体名称
+
 
         // 获取客户区矩形
         RECT rcClient;
@@ -174,6 +176,8 @@ LRESULT CALLBACK ModuleWndProc(
             GetModuleHandle(NULL),
             NULL);
 
+        SendMessage(hwndListView, WM_SETFONT, (WPARAM)hFont, TRUE);
+
         ListView_SetExtendedListViewStyle(hwndListView, LVS_EX_GRIDLINES |
             LVS_EX_FULLROWSELECT |
             LVS_EX_DOUBLEBUFFER |
@@ -181,6 +185,8 @@ LRESULT CALLBACK ModuleWndProc(
             LVS_EX_HEADERINALLVIEWS |
             LVS_EX_LABELTIP |
             LVS_EX_TRANSPARENTBKGND);
+
+        SetWindowTheme(hwndListView, L"Explorer", NULL);
 
         // 设置列标题
         LVCOLUMN lvColumn;

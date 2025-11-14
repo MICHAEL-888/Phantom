@@ -30,6 +30,15 @@
     <ClCompile Include="src\ModuleWindow.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\MainWindow.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ProcessPage.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SettingsPage.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
@@ -49,6 +58,18 @@
     </ClInclude>
     <ClInclude Include="resources\resource.h">
       <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="include\MainWindow.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ListViewEx.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ProcessPage.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\SettingsPage.h">
+      <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
