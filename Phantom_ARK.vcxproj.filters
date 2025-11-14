@@ -1,62 +1,59 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
+    <Filter Include="src">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Header Files">
+    <Filter Include="include">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
+    <Filter Include="resources">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
-    <Filter Include="Header Files\extern">
-      <UniqueIdentifier>{0d172ed8-74cf-4d37-bf2f-c4a5545e8ab6}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\main.cpp">
+      <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="ProcessManage.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\ProcessManage.cpp">
+      <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="API.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\API.cpp">
+      <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="PrivilegeElevate.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\PrivilegeElevate.cpp">
+      <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="ModuleWindow.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\ModuleWindow.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ProcessManage.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\ProcessManage.h">
+      <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="API.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\API.h">
+      <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="PrivilegeElevate.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\PrivilegeElevate.h">
+      <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="ModuleWindow.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\ModuleWindow.h">
+      <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="resources\resource.h">
+      <Filter>resources</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Phantom_ARK.rc">
-      <Filter>Resource Files</Filter>
+    <ResourceCompile Include="resources\Phantom_ARK.rc">
+      <Filter>resources</Filter>
     </ResourceCompile>
   </ItemGroup>
 </Project>
